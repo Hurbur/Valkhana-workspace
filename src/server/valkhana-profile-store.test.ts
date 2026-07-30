@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, readdir, rm, symlink, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -75,5 +75,23 @@ describe('profile-owned metadata store', () => {
     })
 
     await expect(store.readJson('handoff-status.json')).rejects.toThrow('symlink escapes profile')
+  })
+
+  it('rejects a metadata symlink that escapes the selected profile before writing it', async () => {
+    const { hermesHome, profilePath } = await makeProfile()
+    const outsideDirectory = await mkdtemp(join(tmpdir(), 'valkhana-profile-store-outside-write-'))
+    const outsideFile = join(outsideDirectory, 'handoff-status.json')
+    temporaryRoots.push(outsideDirectory)
+    await writeFile(outsideFile, JSON.stringify({ must: 'remain unchanged' }), 'utf8')
+    await symlink(outsideFile, join(profilePath, 'handoff-status.json'))
+    const store = await resolveActiveProfileStore({
+      hermesHome,
+      fetchActiveProfile: async () => ({ id: 'test2', name: 'test2', path: profilePath }),
+    })
+
+    await expect(store.writeJson('handoff-status.json', { state: 'idle' })).rejects.toThrow(
+      'symlink escapes profile',
+    )
+    await expect(readFile(outsideFile, 'utf8')).resolves.toContain('remain unchanged')
   })
 })

@@ -3,7 +3,6 @@ import { json } from '@tanstack/react-start'
 import { isAuthenticated } from '../../../server/auth-middleware'
 import { requireJsonContentType } from '../../../server/rate-limit'
 import {
-  applyHandoffStatusPatch,
   isHandoffStatusStale,
   parseHandoffStatusPatch,
   ValkhanaHandoffStatusError,
@@ -15,7 +14,10 @@ import {
 import {
   ValkhanaProfileStoreError,
 } from '../../../server/valkhana-profile-store'
-import { readActiveHandoffStatus } from '../../../server/valkhana-handoff-service'
+import {
+  mutateActiveHandoffStatus,
+  readActiveHandoffStatus,
+} from '../../../server/valkhana-handoff-service'
 
 function errorResponse(error: unknown): Response {
   const message = error instanceof Error ? error.message : 'handoff status unavailable'
@@ -67,9 +69,7 @@ export const Route = createFileRoute('/api/dashboard/handoff-status')({
 
         try {
           const payload = parseHandoffStatusPatch(await request.json())
-          const { store, status } = await readActiveHandoffStatus()
-          const updated = applyHandoffStatusPatch(status, payload, 'terminal')
-          await store.writeJson('handoff-status.json', updated)
+          const updated = await mutateActiveHandoffStatus('terminal', payload)
           return json({ status: updated, stale: false })
         } catch (error) {
           return errorResponse(error)

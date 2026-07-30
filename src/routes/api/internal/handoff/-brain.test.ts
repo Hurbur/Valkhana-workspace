@@ -13,6 +13,13 @@ const mocks = vi.hoisted(() => ({
   readJson: vi.fn(),
   writeJson: vi.fn(),
   assertBrainWriterAuthorized: vi.fn(),
+  ValkhanaHandoffAuthorizationError: class ValkhanaHandoffAuthorizationError extends Error {
+    status: 401 | 503
+    constructor(message: string, status: 401 | 503) {
+      super(message)
+      this.status = status
+    }
+  },
 }))
 
 vi.mock('../../../../server/valkhana-profile-store', () => ({
@@ -25,7 +32,7 @@ vi.mock('../../../../server/valkhana-profile-store', () => ({
 }))
 vi.mock('../../../../server/valkhana-handoff-auth', () => ({
   assertBrainWriterAuthorized: mocks.assertBrainWriterAuthorized,
-  ValkhanaHandoffAuthorizationError: class ValkhanaHandoffAuthorizationError extends Error {},
+  ValkhanaHandoffAuthorizationError: mocks.ValkhanaHandoffAuthorizationError,
 }))
 
 import { Route } from './brain'
@@ -72,9 +79,34 @@ describe('POST /api/internal/handoff/brain', () => {
       },
     })
     expect(response.status).toBe(200)
+    expect(mocks.assertBrainWriterAuthorized).toHaveBeenCalledTimes(1)
     expect(mocks.writeJson).toHaveBeenCalledWith(
       'handoff-status.json',
       expect.objectContaining({ actor: 'brain', state: 'brain-working' }),
     )
   })
+
+  it.each(['missing token', 'wrong token'])(
+    'rejects a Brain writer with %s before profile I/O',
+    async (reason) => {
+      mocks.assertBrainWriterAuthorized.mockImplementation(() => {
+        throw new mocks.ValkhanaHandoffAuthorizationError(
+          `Unauthorized: ${reason}`,
+          401,
+        )
+      })
+
+      const response = await handler({
+        request: new Request('http://localhost/api/internal/handoff/brain', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ state: 'brain-working' }),
+        }),
+      })
+
+      expect(response.status).toBe(401)
+      expect(mocks.readJson).not.toHaveBeenCalled()
+      expect(mocks.writeJson).not.toHaveBeenCalled()
+    },
+  )
 })

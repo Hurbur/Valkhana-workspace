@@ -5,12 +5,11 @@ import {
   ValkhanaHandoffAuthorizationError,
 } from '../../../../server/valkhana-handoff-auth'
 import {
-  applyHandoffStatusPatch,
   isHandoffStatusStale,
   parseBrainHandoffStatusPatch,
   ValkhanaHandoffStatusError,
 } from '../../../../server/valkhana-handoff-status'
-import { readActiveHandoffStatus } from '../../../../server/valkhana-handoff-service'
+import { mutateActiveHandoffStatus } from '../../../../server/valkhana-handoff-service'
 import { ValkhanaProfileStoreError } from '../../../../server/valkhana-profile-store'
 import { requireJsonContentType } from '../../../../server/rate-limit'
 
@@ -46,9 +45,7 @@ export const Route = createFileRoute('/api/internal/handoff/brain')({
 
         try {
           const patch = parseBrainHandoffStatusPatch(await request.json())
-          const { store, status } = await readActiveHandoffStatus()
-          const updated = applyHandoffStatusPatch(status, patch, 'brain')
-          await store.writeJson('handoff-status.json', updated)
+          const updated = await mutateActiveHandoffStatus('brain', patch)
           return json({ status: updated, stale: isHandoffStatusStale(updated) })
         } catch (error) {
           return errorResponse(error)

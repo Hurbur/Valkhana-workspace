@@ -151,7 +151,30 @@ describe('/api/dashboard/handoff-status', () => {
     expect(writeJson).not.toHaveBeenCalled()
   })
 
-  it('rejects client source references and impossible terminal transitions', async () => {
+  it('rejects a browser source reference even for an otherwise-valid terminal pickup', async () => {
+    readJson.mockResolvedValue({
+      version: 1,
+      profileId: 'test2',
+      updatedAt: '2026-07-30T10:00:00.000Z',
+      actor: 'brain',
+      state: 'ready-for-terminal',
+    })
+    const response = await handlers.PATCH({
+      request: new Request('http://localhost/api/dashboard/handoff-status', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          state: 'terminal-working',
+          sourceRef: 'browser-must-not-set-this',
+        }),
+      }),
+    })
+
+    expect(response.status).toBe(400)
+    expect(writeJson).not.toHaveBeenCalled()
+  })
+
+  it('rejects an impossible terminal transition independently of payload fields', async () => {
     readJson.mockResolvedValue({
       version: 1,
       profileId: 'test2',
@@ -163,10 +186,7 @@ describe('/api/dashboard/handoff-status', () => {
       request: new Request('http://localhost/api/dashboard/handoff-status', {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          state: 'terminal-working',
-          sourceRef: 'browser-must-not-set-this',
-        }),
+        body: JSON.stringify({ state: 'terminal-working' }),
       }),
     })
 
