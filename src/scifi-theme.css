@@ -393,3 +393,453 @@
   box-shadow: 0 0 6px rgba(0, 151, 167, 0.2) !important;
   text-shadow: none !important;
 }
+/* ── Atlas Blue ─────────────────────────────────────────────────────── */
+[data-theme='atlas-blue'] {
+  color-scheme: dark !important;
+  --theme-bg: #050a12;
+  --theme-sidebar: #08121f;
+  --theme-panel: #0a1828;
+  --theme-card: #0d1d30;
+  --theme-card2: #132942;
+  --theme-border: #19466b;
+  --theme-border-subtle: #102d47;
+  --theme-text: #c8e8ff;
+  --theme-muted: #6b9fbe;
+  --theme-shadow-1: 0 1px 3px rgba(80, 200, 255, 0.06);
+  --theme-shadow-2: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 1px rgba(80, 200, 255, 0.1);
+  --theme-shadow-3: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 2px rgba(80, 200, 255, 0.08);
+  --theme-glass: rgba(5, 10, 18, 0.9);
+  --theme-focus: #50c8ff;
+  --theme-accent: #50c8ff;
+  --theme-accent-secondary: #3a9fd9;
+  --theme-accent-subtle: rgba(80, 200, 255, 0.08);
+  --theme-accent-border: rgba(80, 200, 255, 0.25);
+  --theme-active: #50c8ff;
+  --theme-link: #50c8ff;
+  --theme-success: #50fa7b;
+  --theme-warning: #ffb347;
+  --theme-danger: #ff6b6b;
+  --theme-stripe: rgba(25, 70, 107, 0.35);
+  --theme-header-bg: #08121f;
+  --theme-header-border: #19466b;
+  --chat-user-bg: #102d47;
+  --chat-user-border: rgba(80, 200, 255, 0.2);
+  --chat-user-foreground: #c8e8ff;
+  --chat-assistant-bg: #0a1828;
+  --chat-assistant-border: #102d47;
+  --chat-assistant-foreground: #c8e8ff;
+  --composer-bg: #08121f;
+  --composer-border: #19466b;
+  --composer-placeholder: #6b9fbe;
+  --tool-card-bg: #0a1828;
+  --tool-card-border: #19466b;
+  --tool-card-title: #c8e8ff;
+  --tool-card-muted: #6b9fbe;
+  --code-bg: #060d18;
+  --code-border: #102d47;
+  --code-foreground: #50c8ff;
+  --theme-input: #08121f;
+}
+
+[data-theme='atlas-blue-light'] {
+  color-scheme: light !important;
+  --theme-bg: #edf8ff;
+  --theme-sidebar: #e1f2ff;
+  --theme-panel: #f5fbff;
+  --theme-card: #ffffff;
+  --theme-card2: #d7edfb;
+  --theme-border: #b6d8ed;
+  --theme-border-subtle: #d4e8f5;
+  --theme-text: #10253a;
+  --theme-muted: #52728a;
+  --theme-shadow-1: 0 1px 3px rgba(16, 37, 58, 0.06);
+  --theme-shadow-2: 0 4px 16px rgba(16, 37, 58, 0.08);
+  --theme-shadow-3: 0 12px 40px rgba(16, 37, 58, 0.12);
+  --theme-glass: rgba(237, 248, 255, 0.92);
+  --theme-focus: #147fb8;
+  --theme-accent: #147fb8;
+  --theme-accent-secondary: #3a9fd9;
+  --theme-accent-subtle: rgba(20, 127, 184, 0.08);
+  --theme-accent-border: rgba(20, 127, 184, 0.22);
+  --theme-active: #0e6d9f;
+  --theme-link: #147fb8;
+  --theme-success: #168b47;
+  --theme-warning: #b35b00;
+  --theme-danger: #c62828;
+  --theme-stripe: rgba(182, 216, 237, 0.4);
+  --theme-header-bg: #e1f2ff;
+  --theme-header-border: #b6d8ed;
+  --chat-user-bg: #d5edf9;
+  --chat-user-border: rgba(20, 127, 184, 0.2);
+  --chat-user-foreground: #10253a;
+  --chat-assistant-bg: #ffffff;
+  --chat-assistant-border: #d4e8f5;
+  --chat-assistant-foreground: #10253a;
+  --composer-bg: #ffffff;
+  --composer-border: #b6d8ed;
+  --composer-placeholder: #52728a;
+  --tool-card-bg: #f5fbff;
+  --tool-card-border: #b6d8ed;
+  --tool-card-title: #10253a;
+  --tool-card-muted: #52728a;
+  --code-bg: #e8f5fc;
+  --code-border: #b6d8ed;
+  --code-foreground: #0e6d9f;
+  --theme-input: #ffffff;
+}
+
+/* ── Purple ─────────────────────────────────────────────────────────── */
+[data-theme='purple'] {
+  color-scheme: dark !important;
+  --theme-bg: #060818;
+  --theme-sidebar: #0b0b24;
+  --theme-panel: #10102e;
+  --theme-card: #16133b;
+  --theme-card2: #211a52;
+  --theme-border: #51398d;
+  --theme-border-subtle: #35255f;
+  --theme-text: #e4d4ff;
+  --theme-muted: #9e82c4;
+  --theme-shadow-1: 0 1px 3px rgba(180, 140, 255, 0.06);
+  --theme-shadow-2: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 1px rgba(180, 140, 255, 0.1);
+  --theme-shadow-3: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 2px rgba(180, 140, 255, 0.08);
+  --theme-glass: rgba(6, 8, 24, 0.9);
+  --theme-focus: #b48cff;
+  --theme-accent: #b48cff;
+  --theme-accent-secondary: #8b5cf6;
+  --theme-accent-subtle: rgba(180, 140, 255, 0.08);
+  --theme-accent-border: rgba(180, 140, 255, 0.28);
+  --theme-active: #b48cff;
+  --theme-link: #b48cff;
+  --theme-success: #a78bfa;
+  --theme-warning: #f0abfc;
+  --theme-danger: #fb7185;
+  --theme-stripe: rgba(81, 57, 141, 0.35);
+  --theme-header-bg: #0b0b24;
+  --theme-header-border: #51398d;
+  --chat-user-bg: #2b1f55;
+  --chat-user-border: rgba(180, 140, 255, 0.2);
+  --chat-user-foreground: #e4d4ff;
+  --chat-assistant-bg: #10102e;
+  --chat-assistant-border: #35255f;
+  --chat-assistant-foreground: #e4d4ff;
+  --composer-bg: #0b0b24;
+  --composer-border: #51398d;
+  --composer-placeholder: #9e82c4;
+  --tool-card-bg: #10102e;
+  --tool-card-border: #51398d;
+  --tool-card-title: #e4d4ff;
+  --tool-card-muted: #9e82c4;
+  --code-bg: #090a22;
+  --code-border: #35255f;
+  --code-foreground: #b48cff;
+  --theme-input: #0b0b24;
+}
+
+[data-theme='purple-light'] {
+  color-scheme: light !important;
+  --theme-bg: #f7f2ff;
+  --theme-sidebar: #efe5ff;
+  --theme-panel: #fbf8ff;
+  --theme-card: #ffffff;
+  --theme-card2: #e8dcf8;
+  --theme-border: #d4bee9;
+  --theme-border-subtle: #e7dbf2;
+  --theme-text: #281942;
+  --theme-muted: #725c8e;
+  --theme-shadow-1: 0 1px 3px rgba(40, 25, 66, 0.06);
+  --theme-shadow-2: 0 4px 16px rgba(40, 25, 66, 0.08);
+  --theme-shadow-3: 0 12px 40px rgba(40, 25, 66, 0.12);
+  --theme-glass: rgba(247, 242, 255, 0.92);
+  --theme-focus: #7c4dce;
+  --theme-accent: #7c4dce;
+  --theme-accent-secondary: #9564d8;
+  --theme-accent-subtle: rgba(124, 77, 206, 0.08);
+  --theme-accent-border: rgba(124, 77, 206, 0.22);
+  --theme-active: #673ab7;
+  --theme-link: #7c4dce;
+  --theme-success: #6650b5;
+  --theme-warning: #a83bb7;
+  --theme-danger: #c6285f;
+  --theme-stripe: rgba(212, 190, 233, 0.4);
+  --theme-header-bg: #efe5ff;
+  --theme-header-border: #d4bee9;
+  --chat-user-bg: #eadcf8;
+  --chat-user-border: rgba(124, 77, 206, 0.2);
+  --chat-user-foreground: #281942;
+  --chat-assistant-bg: #ffffff;
+  --chat-assistant-border: #e7dbf2;
+  --chat-assistant-foreground: #281942;
+  --composer-bg: #ffffff;
+  --composer-border: #d4bee9;
+  --composer-placeholder: #725c8e;
+  --tool-card-bg: #fbf8ff;
+  --tool-card-border: #d4bee9;
+  --tool-card-title: #281942;
+  --tool-card-muted: #725c8e;
+  --code-bg: #f1eaff;
+  --code-border: #d4bee9;
+  --code-foreground: #673ab7;
+  --theme-input: #ffffff;
+}
+
+/* ── Red Gold ───────────────────────────────────────────────────────── */
+[data-theme='red-gold'] {
+  color-scheme: dark !important;
+  --theme-bg: #080604;
+  --theme-sidebar: #120b06;
+  --theme-panel: #1a1009;
+  --theme-card: #21150b;
+  --theme-card2: #382313;
+  --theme-border: #744422;
+  --theme-border-subtle: #4c2c17;
+  --theme-text: #ffe8c8;
+  --theme-muted: #c99568;
+  --theme-shadow-1: 0 1px 3px rgba(255, 180, 80, 0.06);
+  --theme-shadow-2: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 180, 80, 0.1);
+  --theme-shadow-3: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 2px rgba(255, 180, 80, 0.08);
+  --theme-glass: rgba(8, 6, 4, 0.9);
+  --theme-focus: #ffb347;
+  --theme-accent: #ffb347;
+  --theme-accent-secondary: #e07830;
+  --theme-accent-subtle: rgba(255, 180, 80, 0.08);
+  --theme-accent-border: rgba(255, 180, 80, 0.3);
+  --theme-active: #ffb347;
+  --theme-link: #ffb347;
+  --theme-success: #c9a227;
+  --theme-warning: #ff6b4a;
+  --theme-danger: #ff5c5c;
+  --theme-stripe: rgba(116, 68, 34, 0.35);
+  --theme-header-bg: #120b06;
+  --theme-header-border: #744422;
+  --chat-user-bg: #3a2111;
+  --chat-user-border: rgba(255, 180, 80, 0.2);
+  --chat-user-foreground: #ffe8c8;
+  --chat-assistant-bg: #1a1009;
+  --chat-assistant-border: #4c2c17;
+  --chat-assistant-foreground: #ffe8c8;
+  --composer-bg: #120b06;
+  --composer-border: #744422;
+  --composer-placeholder: #c99568;
+  --tool-card-bg: #1a1009;
+  --tool-card-border: #744422;
+  --tool-card-title: #ffe8c8;
+  --tool-card-muted: #c99568;
+  --code-bg: #100a05;
+  --code-border: #4c2c17;
+  --code-foreground: #ffb347;
+  --theme-input: #120b06;
+}
+
+[data-theme='red-gold-light'] {
+  color-scheme: light !important;
+  --theme-bg: #fff6ed;
+  --theme-sidebar: #ffeddd;
+  --theme-panel: #fffaf5;
+  --theme-card: #ffffff;
+  --theme-card2: #f8e0ca;
+  --theme-border: #e8c39e;
+  --theme-border-subtle: #f2dfcb;
+  --theme-text: #3b2110;
+  --theme-muted: #815b3d;
+  --theme-shadow-1: 0 1px 3px rgba(59, 33, 16, 0.06);
+  --theme-shadow-2: 0 4px 16px rgba(59, 33, 16, 0.08);
+  --theme-shadow-3: 0 12px 40px rgba(59, 33, 16, 0.12);
+  --theme-glass: rgba(255, 246, 237, 0.92);
+  --theme-focus: #b85a13;
+  --theme-accent: #b85a13;
+  --theme-accent-secondary: #d8782f;
+  --theme-accent-subtle: rgba(184, 90, 19, 0.08);
+  --theme-accent-border: rgba(184, 90, 19, 0.22);
+  --theme-active: #9b470d;
+  --theme-link: #b85a13;
+  --theme-success: #826d12;
+  --theme-warning: #c4491d;
+  --theme-danger: #c62828;
+  --theme-stripe: rgba(232, 195, 158, 0.4);
+  --theme-header-bg: #ffeddd;
+  --theme-header-border: #e8c39e;
+  --chat-user-bg: #f9dfc5;
+  --chat-user-border: rgba(184, 90, 19, 0.2);
+  --chat-user-foreground: #3b2110;
+  --chat-assistant-bg: #ffffff;
+  --chat-assistant-border: #f2dfcb;
+  --chat-assistant-foreground: #3b2110;
+  --composer-bg: #ffffff;
+  --composer-border: #e8c39e;
+  --composer-placeholder: #815b3d;
+  --tool-card-bg: #fffaf5;
+  --tool-card-border: #e8c39e;
+  --tool-card-title: #3b2110;
+  --tool-card-muted: #815b3d;
+  --code-bg: #fff0e2;
+  --code-border: #e8c39e;
+  --code-foreground: #9b470d;
+  --theme-input: #ffffff;
+}
+
+/* ── Pink ───────────────────────────────────────────────────────────── */
+[data-theme='pink'] {
+  color-scheme: dark !important;
+  --theme-bg: #060810;
+  --theme-sidebar: #100b18;
+  --theme-panel: #17101f;
+  --theme-card: #211423;
+  --theme-card2: #3a1c3d;
+  --theme-border: #79324f;
+  --theme-border-subtle: #4c2036;
+  --theme-text: #ffe8f2;
+  --theme-muted: #c984a4;
+  --theme-shadow-1: 0 1px 3px rgba(255, 140, 184, 0.06);
+  --theme-shadow-2: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 140, 184, 0.1);
+  --theme-shadow-3: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 2px rgba(255, 140, 184, 0.08);
+  --theme-glass: rgba(6, 8, 16, 0.9);
+  --theme-focus: #ff8cb8;
+  --theme-accent: #ff8cb8;
+  --theme-accent-secondary: #f472b6;
+  --theme-accent-subtle: rgba(255, 140, 184, 0.08);
+  --theme-accent-border: rgba(255, 140, 184, 0.28);
+  --theme-active: #ff8cb8;
+  --theme-link: #ff8cb8;
+  --theme-success: #fda4af;
+  --theme-warning: #fcd34d;
+  --theme-danger: #fb7185;
+  --theme-stripe: rgba(121, 50, 79, 0.35);
+  --theme-header-bg: #100b18;
+  --theme-header-border: #79324f;
+  --chat-user-bg: #3a1935;
+  --chat-user-border: rgba(255, 140, 184, 0.2);
+  --chat-user-foreground: #ffe8f2;
+  --chat-assistant-bg: #17101f;
+  --chat-assistant-border: #4c2036;
+  --chat-assistant-foreground: #ffe8f2;
+  --composer-bg: #100b18;
+  --composer-border: #79324f;
+  --composer-placeholder: #c984a4;
+  --tool-card-bg: #17101f;
+  --tool-card-border: #79324f;
+  --tool-card-title: #ffe8f2;
+  --tool-card-muted: #c984a4;
+  --code-bg: #0d0a14;
+  --code-border: #4c2036;
+  --code-foreground: #ff8cb8;
+  --theme-input: #100b18;
+}
+
+[data-theme='pink-light'] {
+  color-scheme: light !important;
+  --theme-bg: #fff4f8;
+  --theme-sidebar: #ffe7f0;
+  --theme-panel: #fff9fb;
+  --theme-card: #ffffff;
+  --theme-card2: #f9dce8;
+  --theme-border: #edbdd0;
+  --theme-border-subtle: #f5dce6;
+  --theme-text: #3a1727;
+  --theme-muted: #85566d;
+  --theme-shadow-1: 0 1px 3px rgba(58, 23, 39, 0.06);
+  --theme-shadow-2: 0 4px 16px rgba(58, 23, 39, 0.08);
+  --theme-shadow-3: 0 12px 40px rgba(58, 23, 39, 0.12);
+  --theme-glass: rgba(255, 244, 248, 0.92);
+  --theme-focus: #c84d80;
+  --theme-accent: #c84d80;
+  --theme-accent-secondary: #e56fa3;
+  --theme-accent-subtle: rgba(200, 77, 128, 0.08);
+  --theme-accent-border: rgba(200, 77, 128, 0.22);
+  --theme-active: #aa3a68;
+  --theme-link: #c84d80;
+  --theme-success: #a44e69;
+  --theme-warning: #9a6b00;
+  --theme-danger: #c62850;
+  --theme-stripe: rgba(237, 189, 208, 0.4);
+  --theme-header-bg: #ffe7f0;
+  --theme-header-border: #edbdd0;
+  --chat-user-bg: #f9dce8;
+  --chat-user-border: rgba(200, 77, 128, 0.2);
+  --chat-user-foreground: #3a1727;
+  --chat-assistant-bg: #ffffff;
+  --chat-assistant-border: #f5dce6;
+  --chat-assistant-foreground: #3a1727;
+  --composer-bg: #ffffff;
+  --composer-border: #edbdd0;
+  --composer-placeholder: #85566d;
+  --tool-card-bg: #fff9fb;
+  --tool-card-border: #edbdd0;
+  --tool-card-title: #3a1727;
+  --tool-card-muted: #85566d;
+  --code-bg: #ffedf4;
+  --code-border: #edbdd0;
+  --code-foreground: #aa3a68;
+  --theme-input: #ffffff;
+}
+
+/* ── Atlas theme shared Tailwind and surface bridges ─────────────────── */
+[data-theme='atlas-blue'],
+[data-theme='purple'],
+[data-theme='red-gold'],
+[data-theme='pink'] {
+  --color-primary-50: var(--theme-panel) !important;
+  --color-primary-100: var(--theme-card) !important;
+  --color-primary-200: var(--theme-border-subtle) !important;
+  --color-primary-300: var(--theme-border) !important;
+  --color-primary-400: var(--theme-muted) !important;
+  --color-primary-500: var(--theme-muted) !important;
+  --color-primary-600: var(--theme-muted) !important;
+  --color-primary-700: var(--theme-text) !important;
+  --color-primary-800: var(--theme-text) !important;
+  --color-primary-900: var(--theme-text) !important;
+  --color-primary-950: var(--theme-text) !important;
+  --color-surface: var(--theme-bg) !important;
+  --color-surface-deep: var(--theme-bg) !important;
+  --color-ink: var(--theme-text) !important;
+  --color-accent-400: var(--theme-accent-secondary) !important;
+  --color-accent-500: var(--theme-accent) !important;
+  --color-accent-600: var(--theme-accent) !important;
+}
+
+[data-theme='atlas-blue-light'],
+[data-theme='purple-light'],
+[data-theme='red-gold-light'],
+[data-theme='pink-light'] {
+  --color-primary-50: var(--theme-card) !important;
+  --color-primary-100: var(--theme-card2) !important;
+  --color-primary-200: var(--theme-border) !important;
+  --color-primary-300: var(--theme-border-subtle) !important;
+  --color-primary-400: var(--theme-muted) !important;
+  --color-primary-500: var(--theme-muted) !important;
+  --color-primary-600: var(--theme-muted) !important;
+  --color-primary-700: var(--theme-text) !important;
+  --color-primary-800: var(--theme-text) !important;
+  --color-primary-900: var(--theme-text) !important;
+  --color-primary-950: var(--theme-text) !important;
+  --color-surface: var(--theme-bg) !important;
+  --color-surface-deep: var(--theme-bg) !important;
+  --color-ink: var(--theme-text) !important;
+  --color-accent-400: var(--theme-accent-secondary) !important;
+  --color-accent-500: var(--theme-accent) !important;
+  --color-accent-600: var(--theme-accent) !important;
+  --color-white: var(--theme-card) !important;
+}
+
+[data-theme='atlas-blue'] body,
+[data-theme='purple'] body,
+[data-theme='red-gold'] body,
+[data-theme='pink'] body,
+[data-theme='atlas-blue-light'] body,
+[data-theme='purple-light'] body,
+[data-theme='red-gold-light'] body,
+[data-theme='pink-light'] body {
+  background-color: var(--theme-bg);
+  color: var(--theme-text);
+}
+
+[data-theme='atlas-blue'] :focus-visible,
+[data-theme='purple'] :focus-visible,
+[data-theme='red-gold'] :focus-visible,
+[data-theme='pink'] :focus-visible,
+[data-theme='atlas-blue-light'] :focus-visible,
+[data-theme='purple-light'] :focus-visible,
+[data-theme='red-gold-light'] :focus-visible,
+[data-theme='pink-light'] :focus-visible {
+  outline-color: var(--theme-accent);
+}

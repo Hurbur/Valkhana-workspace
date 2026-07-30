@@ -11,6 +11,14 @@ export type ThemeId =
   | 'claude-slate-light'
   | 'scifi'
   | 'scifi-light'
+  | 'atlas-blue'
+  | 'atlas-blue-light'
+  | 'purple'
+  | 'purple-light'
+  | 'red-gold'
+  | 'red-gold-light'
+  | 'pink'
+  | 'pink-light'
 
 export const THEMES: Array<{
   id: ThemeId
@@ -90,11 +98,60 @@ export const THEMES: Array<{
     description: 'Cold steel and teal — cyberpunk interface in daylight',
     icon: '🌌',
   },
+  {
+    id: 'atlas-blue',
+    label: 'Atlas Blue',
+    description: 'Deep navy command center with cyan signal glow',
+    icon: '🔵',
+  },
+  {
+    id: 'atlas-blue-light',
+    label: 'Atlas Blue Light',
+    description: 'Clean white command center with cobalt-blue accents',
+    icon: '🔵',
+  },
+  {
+    id: 'purple',
+    label: 'Purple',
+    description: 'Dark violet workspace with luminous lavender accents',
+    icon: '🟣',
+  },
+  {
+    id: 'purple-light',
+    label: 'Purple Light',
+    description: 'Soft lavender workspace with violet accents',
+    icon: '🟣',
+  },
+  {
+    id: 'red-gold',
+    label: 'Red Gold',
+    description: 'Dark ember workspace with warm gold signal accents',
+    icon: '🟠',
+  },
+  {
+    id: 'red-gold-light',
+    label: 'Red Gold Light',
+    description: 'Warm parchment workspace with amber-gold accents',
+    icon: '🟠',
+  },
+  {
+    id: 'pink',
+    label: 'Pink',
+    description: 'Dark rose workspace with vivid pink signal accents',
+    icon: '🩷',
+  },
+  {
+    id: 'pink-light',
+    label: 'Pink Light',
+    description: 'Soft rose workspace with pink accents',
+    icon: '🩷',
+  },
 ]
 
 const STORAGE_KEY = 'claude-theme'
 const DEFAULT_THEME: ThemeId = 'claude-nous'
 const THEME_SET = new Set<ThemeId>(THEMES.map((theme) => theme.id))
+
 const LIGHT_THEME_MAP: Record<
   Exclude<ThemeId, `${string}-light`>,
   Extract<ThemeId, `${string}-light`>
@@ -104,8 +161,13 @@ const LIGHT_THEME_MAP: Record<
   'claude-official': 'claude-official-light',
   'claude-classic': 'claude-classic-light',
   'claude-slate': 'claude-slate-light',
-  'scifi': 'scifi-light',
+  scifi: 'scifi-light',
+  'atlas-blue': 'atlas-blue-light',
+  purple: 'purple-light',
+  'red-gold': 'red-gold-light',
+  pink: 'pink-light',
 }
+
 const DARK_THEME_MAP: Record<
   Extract<ThemeId, `${string}-light`>,
   Exclude<ThemeId, `${string}-light`>
@@ -116,6 +178,10 @@ const DARK_THEME_MAP: Record<
   'claude-classic-light': 'claude-classic',
   'claude-slate-light': 'claude-slate',
   'scifi-light': 'scifi',
+  'atlas-blue-light': 'atlas-blue',
+  'purple-light': 'purple',
+  'red-gold-light': 'red-gold',
+  'pink-light': 'pink',
 }
 
 const LIGHT_THEMES = new Set<ThemeId>([
@@ -125,6 +191,10 @@ const LIGHT_THEMES = new Set<ThemeId>([
   'claude-classic-light',
   'claude-slate-light',
   'scifi-light',
+  'atlas-blue-light',
+  'purple-light',
+  'red-gold-light',
+  'pink-light',
 ])
 
 export function isValidTheme(
