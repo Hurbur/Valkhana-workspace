@@ -18,17 +18,11 @@ import { Swarm2LiveChat } from './swarm2-live-chat'
 import { Swarm2TaskQueue } from './swarm2-task-queue'
 import type { CrewMember } from '@/hooks/use-crew-status'
 import { getOnlineStatus } from '@/hooks/use-crew-status'
+import {
+  deriveSwarm2WorkerState,
+  type Swarm2WorkerState,
+} from './swarm2-worker-status'
 import { cn } from '@/lib/utils'
-
-type WorkerState =
-  | 'active'
-  | 'idle'
-  | 'error'
-  | 'offline'
-  | 'thinking'
-  | 'writing'
-  | 'reviewing'
-  | 'waiting'
 
 const WORKER_COLORS = [
   '#34d399',
@@ -72,43 +66,7 @@ function roleFromId(id: string): string {
   }
 }
 
-function deriveWorkerState(
-  member: CrewMember,
-  currentTask: string | null,
-  checkpointStatus?: string | null,
-  runtimeState?: string | null,
-): WorkerState {
-  const status = getOnlineStatus(member)
-  if (status === 'offline') return 'offline'
-
-  // Authoritative runtime state takes precedence over the title heuristic.
-  // SwarmCheckpointStatus: 'none' | 'in_progress' | 'done' | 'blocked' | 'handoff' | 'needs_input'
-  // SwarmWorkerState: 'idle' | 'executing' | 'thinking' | 'writing' | 'waiting' | 'blocked' | 'syncing' | 'reviewing' | 'offline'
-  const cs = checkpointStatus ?? null
-  const rs = runtimeState ?? null
-
-  // Terminal-done: a finished worker renders as Idle (there is no 'done' WorkerState).
-  if (cs === 'done' || cs === 'handoff' || rs === 'idle') return 'idle'
-  // Blocked from either authoritative source.
-  if (cs === 'blocked' || rs === 'blocked') return 'error'
-  // Needs human input / waiting.
-  if (cs === 'needs_input' || rs === 'waiting') return 'waiting'
-
-  if (!currentTask) return 'idle'
-
-  // Safety: a set, non-in-progress checkpoint must never render as active.
-  if (cs && cs !== 'none' && cs !== 'in_progress') return 'idle'
-
-  const lc = currentTask.toLowerCase()
-  if (lc.includes('review')) return 'reviewing'
-  if (lc.includes('writ') || lc.includes('doc') || lc.includes('spec')) return 'writing'
-  if (lc.includes('research') || lc.includes('plan') || lc.includes('think')) return 'thinking'
-  if (lc.includes('wait') || lc.includes('approval')) return 'waiting'
-  if (lc.includes('block') || lc.includes('error') || lc.includes('fail')) return 'error'
-  return 'active'
-}
-
-function statusStyles(state: WorkerState) {
+function statusStyles(state: Swarm2WorkerState) {
   if (state === 'error') {
     return { dot: 'bg-red-500', ring: 'text-red-500', label: 'Error', progress: 'failed' as const, avatar: 'failed' as const }
   }
@@ -254,7 +212,7 @@ export function OperationalWorkerCard({
   const [draftModel, setDraftModel] = useState('')
   const [draftAvatar, setDraftAvatar] = useState('')
   const [taskComposerOpen, setTaskComposerOpen] = useState(false)
-  const state = deriveWorkerState(member, currentTask, checkpointStatus, runtimeState)
+  const state = deriveSwarm2WorkerState(member, currentTask, checkpointStatus, runtimeState)
   const status = statusStyles(state)
   const role = settings.role || member.role || roleFromId(member.id)
   const displayName = settings.displayName || member.displayName || member.id

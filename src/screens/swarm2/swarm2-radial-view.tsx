@@ -4,8 +4,11 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { CheckListIcon, ComputerTerminal01Icon } from '@hugeicons/core-free-icons'
 import type { CrewMember } from '@/hooks/use-crew-status'
-import { getOnlineStatus } from '@/hooks/use-crew-status'
 import { cn } from '@/lib/utils'
+import {
+  deriveSwarm2WorkerState,
+  type Swarm2WorkerState,
+} from './swarm2-worker-status'
 
 export type RadialNodePosition = {
   x: number
@@ -49,43 +52,28 @@ type Swarm2RadialViewProps = {
   onHubRef: (node: HTMLDivElement | null) => void
 }
 
-export type RadialWorkerStatus =
-  | 'Offline'
-  | 'Idle'
-  | 'Blocked'
-  | 'Waiting'
-  | 'Reviewing'
-  | 'Writing'
-  | 'Thinking'
-  | 'Working'
-  | 'Ready'
-
 export function getRadialWorkerStatus(
-  member: Pick<CrewMember, 'profileFound' | 'gatewayState' | 'processAlive'>,
+  member: CrewMember,
   runtime?: RadialRuntime,
-): RadialWorkerStatus {
-  const online = getOnlineStatus(member as CrewMember)
-  if (online === 'offline') return 'Offline'
-
-  const cs = runtime?.checkpointStatus ?? null
-  const rs = runtime?.state ?? null
-  if (cs === 'done' || cs === 'handoff' || rs === 'idle') return 'Idle'
-  if (cs === 'blocked' || rs === 'blocked') return 'Blocked'
-  if (cs === 'needs_input' || rs === 'waiting') return 'Waiting'
-  if (!runtime?.currentTask) return online === 'online' ? 'Ready' : 'Idle'
-
-  const task = runtime.currentTask.toLowerCase()
-  if (rs === 'reviewing' || task.includes('review')) return 'Reviewing'
-  if (rs === 'writing' || task.includes('writ') || task.includes('doc')) return 'Writing'
-  if (rs === 'thinking' || task.includes('research') || task.includes('plan') || task.includes('think')) return 'Thinking'
-  return 'Working'
+): Swarm2WorkerState {
+  return deriveSwarm2WorkerState(
+    member,
+    runtime?.currentTask ?? null,
+    runtime?.checkpointStatus,
+    runtime?.state,
+  )
 }
 
-function statusClass(status: string): string {
-  if (status === 'Blocked') return 'bg-red-500'
-  if (status === 'Waiting') return 'bg-amber-500'
-  if (status === 'Working' || status === 'Reviewing' || status === 'Writing' || status === 'Thinking') return 'bg-emerald-500 animate-pulse'
-  return status === 'Ready' ? 'bg-sky-500' : 'bg-primary-400'
+function statusLabel(state: Swarm2WorkerState): string {
+  if (state === 'error') return 'Blocked'
+  return state[0].toUpperCase() + state.slice(1)
+}
+
+function statusClass(state: Swarm2WorkerState): string {
+  if (state === 'error') return 'bg-red-500'
+  if (state === 'waiting') return 'bg-amber-500'
+  if (state === 'active' || state === 'reviewing' || state === 'writing' || state === 'thinking') return 'bg-emerald-500 animate-pulse'
+  return state === 'idle' ? 'bg-primary-400' : 'bg-sky-500'
 }
 
 export function Swarm2RadialView({
@@ -137,7 +125,8 @@ export function Swarm2RadialView({
         const position = positions[index]
         const selected = member.id === selectedId
         const inRoom = roomIds.includes(member.id)
-        const status = getRadialWorkerStatus(member, runtime)
+        const state = getRadialWorkerStatus(member, runtime)
+        const status = statusLabel(state)
         const label = member.displayName || member.id
         const task = runtime?.currentTask || member.lastSessionTitle || 'Ready for task'
         return (
@@ -160,7 +149,7 @@ export function Swarm2RadialView({
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="truncate text-xs font-semibold text-[var(--theme-text)]">{label}</span>
-                <span className={cn('size-2 shrink-0 rounded-full', statusClass(status))} aria-hidden="true" />
+                <span className={cn('size-2 shrink-0 rounded-full', statusClass(state))} aria-hidden="true" />
               </div>
               <div className="mt-1 truncate text-[9px] font-semibold uppercase tracking-[0.13em] text-[var(--theme-muted)]">{member.role || 'Worker'} · {status}</div>
               <p className="mt-2 line-clamp-2 min-h-8 text-[10px] leading-snug text-[var(--theme-muted-2)]" title={task}>{task}</p>

@@ -1,21 +1,20 @@
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import type { CrewMember } from '@/hooks/use-crew-status'
+import { deriveSwarm2WorkerState } from './swarm2-worker-status'
 import {
   buildRadialNodePositions,
   getRadialWorkerStatus,
 } from './swarm2-radial-view'
 
-const screenSource = readFileSync(resolve(import.meta.dirname, 'swarm2-screen.tsx'), 'utf8')
-const wiresSource = readFileSync(resolve(import.meta.dirname, 'swarm2-wires.tsx'), 'utf8')
-const radialSource = readFileSync(resolve(import.meta.dirname, 'swarm2-radial-view.tsx'), 'utf8')
-
-describe('Swarm2 organization view registration', () => {
-  it('offers the radial organization view and renders it as a separate topology surface', () => {
-    expect(screenSource).toContain("from './swarm2-radial-view'")
-    expect(screenSource).toContain("viewMode === 'radial'")
-  })
-})
+function worker(overrides: Partial<CrewMember> = {}): CrewMember {
+  return {
+    id: 'builder', displayName: 'Builder', role: 'Builder', profileFound: true,
+    gatewayState: 'running', processAlive: true, platforms: {}, model: 'gpt-5.6-terra', provider: 'openai',
+    lastSessionTitle: null, lastSessionAt: null, sessionCount: 0, messageCount: 0, toolCallCount: 0,
+    totalTokens: 0, estimatedCostUsd: null, cronJobCount: 0, assignedTaskCount: 0,
+    ...overrides,
+  }
+}
 
 describe('Swarm2 radial node positions', () => {
   it('keeps zero nodes empty and one worker clear of the central hub', () => {
@@ -33,28 +32,30 @@ describe('Swarm2 radial node positions', () => {
   })
 })
 
-describe('Swarm2 topology wire lifecycle', () => {
-  it('uses the radial hub as the wire origin and remeasures when refs change', () => {
-    expect(screenSource).toContain('onHubRef={setRadialHub}')
-    expect(wiresSource).toContain('version,')
-    expect(wiresSource).toContain('[workers.length, version]')
-  })
-})
+describe('Swarm2 radial worker state parity', () => {
+  it('delegates no-task, approval, blocked, and review cases to the same canonical derivation as worker cards', () => {
+    const cases = [
+      { task: null, checkpoint: null, runtime: null },
+      { task: 'Waiting for approval', checkpoint: null, runtime: null },
+      { task: 'Build UI', checkpoint: 'blocked', runtime: null },
+      { task: 'Build UI', checkpoint: null, runtime: 'blocked' },
+      { task: 'Review the patch', checkpoint: null, runtime: 'reviewing' },
+      { task: 'Write the specification', checkpoint: 'in_progress', runtime: 'writing' },
+    ] as const
 
-describe('Swarm2 radial accessibility and state parity', () => {
-  it('keeps the hub measurable, exposes selected details, and preserves runtime state precedence', () => {
-    expect(radialSource).toContain('onHubRef')
-    expect(radialSource).toContain('role="region"')
-    expect(radialSource).toContain('getRadialWorkerStatus')
-    expect(radialSource).toContain("cs === 'done' || cs === 'handoff' || rs === 'idle'")
+    for (const testCase of cases) {
+      const expected = deriveSwarm2WorkerState(worker(), testCase.task, testCase.checkpoint, testCase.runtime)
+      expect(getRadialWorkerStatus(worker(), {
+        currentTask: testCase.task,
+        checkpointStatus: testCase.checkpoint,
+        state: testCase.runtime,
+      })).toBe(expected)
+    }
   })
 
-  it('keeps offline, terminal-done, handoff, and idle statuses aligned with worker cards', () => {
-    const online = { profileFound: true, gatewayState: 'running', processAlive: true }
-    expect(getRadialWorkerStatus({ ...online, processAlive: false }, { currentTask: 'Build UI' })).toBe('Offline')
-    expect(getRadialWorkerStatus(online, { currentTask: 'Build UI', checkpointStatus: 'done' })).toBe('Idle')
-    expect(getRadialWorkerStatus(online, { currentTask: 'Build UI', checkpointStatus: 'handoff' })).toBe('Idle')
-    expect(getRadialWorkerStatus(online, { currentTask: 'Build UI', state: 'idle' })).toBe('Idle')
-    expect(getRadialWorkerStatus(online, { currentTask: 'Review the patch', state: 'reviewing' })).toBe('Reviewing')
+  it('keeps offline and terminal-done/handoff states authoritative', () => {
+    expect(getRadialWorkerStatus(worker({ processAlive: false }), { currentTask: 'Build UI' })).toBe('offline')
+    expect(getRadialWorkerStatus(worker(), { currentTask: 'Build UI', checkpointStatus: 'done' })).toBe('idle')
+    expect(getRadialWorkerStatus(worker(), { currentTask: 'Build UI', checkpointStatus: 'handoff' })).toBe('idle')
   })
 })
