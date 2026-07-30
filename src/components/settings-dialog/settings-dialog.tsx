@@ -1512,6 +1512,11 @@ const ENTERPRISE_THEME_FAMILIES: Array<ThemeId> = [
   'claude-official',
   'claude-classic',
   'claude-slate',
+  'scifi',
+  'atlas-blue',
+  'purple',
+  'red-gold',
+  'pink',
 ]
 
 const ENTERPRISE_THEMES = THEMES.map((theme) => ({

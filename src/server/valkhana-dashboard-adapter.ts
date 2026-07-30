@@ -190,6 +190,23 @@ export interface ValkhanaBriefingData {
   fetchedAt: number
 }
 
+function normalizeActiveProfile(value: unknown): ValkhanaProfile | null {
+  if (!value || typeof value !== 'object') return null
+
+  const active = value as Record<string, unknown>
+  const id = [active.id, active.name, active.active, active.current].find(
+    (candidate): candidate is string =>
+      typeof candidate === 'string' && candidate.length > 0,
+  )
+
+  if (!id) return null
+
+  return {
+    id,
+    name: typeof active.name === 'string' ? active.name : id,
+  }
+}
+
 /**
  * Fetch everything the daily-briefing card needs in one call. Each section
  * fails independently — a single unreachable/erroring endpoint doesn't take
@@ -221,7 +238,7 @@ export async function fetchValkhanaBriefing(): Promise<{
   }
 
   if (activeRes.status === 'fulfilled') {
-    data.activeProfile = (activeRes.value as ValkhanaProfile) ?? null
+    data.activeProfile = normalizeActiveProfile(activeRes.value)
   } else {
     errors.activeProfile =
       activeRes.reason instanceof Error
