@@ -61,4 +61,39 @@ describe('handoff status contract', () => {
       ),
     ).toThrow('cannot transition')
   })
+
+  it('does not let terminal work begin from idle, Brain work, or completion', () => {
+    for (const state of ['idle', 'brain-working', 'complete'] as const) {
+      const current = {
+        ...createInitialHandoffStatus('default', new Date('2026-07-30T10:00:00.000Z')),
+        state,
+      }
+
+      expect(() =>
+        applyHandoffStatusPatch(
+          current,
+          { state: 'terminal-working' },
+          'terminal',
+          new Date('2026-07-30T10:01:00.000Z'),
+        ),
+      ).toThrow('cannot transition')
+    }
+  })
+
+  it('does not let the Brain mark a terminal handoff blocked', () => {
+    const current = {
+      ...createInitialHandoffStatus('default', new Date('2026-07-30T10:00:00.000Z')),
+      actor: 'brain' as const,
+      state: 'brain-working' as const,
+    }
+
+    expect(() =>
+      applyHandoffStatusPatch(
+        current,
+        { state: 'blocked' },
+        'brain',
+        new Date('2026-07-30T10:01:00.000Z'),
+      ),
+    ).toThrow('cannot transition')
+  })
 })

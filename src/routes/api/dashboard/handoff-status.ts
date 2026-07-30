@@ -4,44 +4,31 @@ import { isAuthenticated } from '../../../server/auth-middleware'
 import { requireJsonContentType } from '../../../server/rate-limit'
 import {
   applyHandoffStatusPatch,
-  createInitialHandoffStatus,
   isHandoffStatusStale,
-  parseHandoffStatus,
   parseHandoffStatusPatch,
   ValkhanaHandoffStatusError,
-  type HandoffStatus,
 } from '../../../server/valkhana-handoff-status'
 import {
-  resolveActiveProfileStore,
+  ValkhanaHandoffAuthorizationError,
+  assertTerminalBrowserMutationAuthorized,
+} from '../../../server/valkhana-handoff-auth'
+import {
   ValkhanaProfileStoreError,
 } from '../../../server/valkhana-profile-store'
-
-async function readActiveHandoffStatus(): Promise<{
-  store: Awaited<ReturnType<typeof resolveActiveProfileStore>>
-  status: HandoffStatus
-}> {
-  const store = await resolveActiveProfileStore()
-  const raw = await store.readJson('handoff-status.json')
-  const status = raw
-    ? parseHandoffStatus(raw)
-    : createInitialHandoffStatus(store.profile.id)
-
-  if (status.profileId !== store.profile.id) {
-    throw new ValkhanaHandoffStatusError(
-      'handoff status belongs to a different profile',
-    )
-  }
-  return { store, status }
-}
+import { readActiveHandoffStatus } from '../../../server/valkhana-handoff-service'
 
 function errorResponse(error: unknown): Response {
   const message = error instanceof Error ? error.message : 'handoff status unavailable'
   const status =
     error instanceof ValkhanaHandoffStatusError ||
-    error instanceof ValkhanaProfileStoreError
+    error instanceof ValkhanaProfileStoreError ||
+    error instanceof ValkhanaHandoffAuthorizationError ||
+    error instanceof SyntaxError
       ? 400
       : 500
-  return json({ error: message }, { status })
+  const errorStatus =
+    error instanceof ValkhanaHandoffAuthorizationError ? error.status : status
+  return json({ error: message }, { status: errorStatus })
 }
 
 /**
@@ -70,8 +57,10 @@ export const Route = createFileRoute('/api/dashboard/handoff-status')({
         }
       },
       PATCH: async ({ request }) => {
-        if (!isAuthenticated(request)) {
-          return json({ error: 'Unauthorized' }, { status: 401 })
+        try {
+          assertTerminalBrowserMutationAuthorized(request)
+        } catch (error) {
+          return errorResponse(error)
         }
         const contentTypeError = requireJsonContentType(request)
         if (contentTypeError) return contentTypeError

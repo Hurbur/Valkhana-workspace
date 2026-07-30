@@ -1,5 +1,5 @@
-import { readFile, realpath, rename, writeFile } from 'node:fs/promises'
-import { basename, relative, resolve, sep } from 'node:path'
+import { lstat, readFile, realpath, rename, writeFile } from 'node:fs/promises'
+import { basename, isAbsolute, relative, resolve, sep } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import {
   fetchValkhanaActiveProfile,
@@ -28,7 +28,7 @@ function defaultHermesHome(): string {
 
 function isInsideRoot(root: string, candidate: string): boolean {
   const rel = relative(root, candidate)
-  return rel === '' || (!rel.startsWith(`..${sep}`) && rel !== '..' && !resolve(root, rel).startsWith(`..${sep}`))
+  return rel === '' || (!rel.startsWith(`..${sep}`) && rel !== '..' && !isAbsolute(rel))
 }
 
 function isAllowedProfileDirectory(
@@ -90,10 +90,28 @@ export async function resolveActiveProfileStore(
     return candidate
   }
 
+  const assertMetadataTargetSafe = async (target: string): Promise<void> => {
+    try {
+      const targetStat = await lstat(target)
+      if (!targetStat.isSymbolicLink()) return
+      const resolvedTarget = await realpath(target)
+      if (!isInsideRoot(profilePath, resolvedTarget)) {
+        throw new ValkhanaProfileStoreError('profile metadata symlink escapes profile')
+      }
+    } catch (error) {
+      if (isNotFound(error)) return
+      if (error instanceof ValkhanaProfileStoreError) throw error
+      throw new ValkhanaProfileStoreError(
+        `failed to inspect profile metadata target: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  }
+
   return {
     profile: { ...profile, path: profilePath },
     async readJson(file) {
       const target = safeFilePath(file)
+      await assertMetadataTargetSafe(target)
       let raw: string
       try {
         raw = await readFile(target, 'utf8')
@@ -111,6 +129,7 @@ export async function resolveActiveProfileStore(
     },
     async writeJson(file, value) {
       const target = safeFilePath(file)
+      await assertMetadataTargetSafe(target)
       const temporary = resolve(profilePath, `.${file}.${randomUUID()}.tmp`)
       try {
         await writeFile(temporary, `${JSON.stringify(value, null, 2)}\n`, {

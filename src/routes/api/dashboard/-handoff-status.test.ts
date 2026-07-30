@@ -6,6 +6,7 @@ vi.mock('@tanstack/react-router', () => ({
 
 vi.mock('../../../server/auth-middleware', () => ({
   isAuthenticated: vi.fn(),
+  isPasswordProtectionEnabled: vi.fn(),
 }))
 
 const profile = {
@@ -18,9 +19,13 @@ const writeJson = vi.fn()
 
 vi.mock('../../../server/valkhana-profile-store', () => ({
   resolveActiveProfileStore: vi.fn(async () => ({ profile, readJson, writeJson })),
+  ValkhanaProfileStoreError: class ValkhanaProfileStoreError extends Error {},
 }))
 
-import { isAuthenticated } from '../../../server/auth-middleware'
+import {
+  isAuthenticated,
+  isPasswordProtectionEnabled,
+} from '../../../server/auth-middleware'
 import { Route } from './handoff-status'
 
 type Handlers = {
@@ -33,6 +38,7 @@ const handlers = (Route as { server: { handlers: Handlers } }).server.handlers
 beforeEach(() => {
   vi.resetAllMocks()
   vi.mocked(isAuthenticated).mockReturnValue(true)
+  vi.mocked(isPasswordProtectionEnabled).mockReturnValue(true)
 })
 
 describe('/api/dashboard/handoff-status', () => {
@@ -100,5 +106,92 @@ describe('/api/dashboard/handoff-status', () => {
       'handoff-status.json',
       expect.objectContaining({ actor: 'terminal', state: 'terminal-working' }),
     )
+  })
+
+  it('rejects an unauthenticated PATCH before it reads or writes profile state', async () => {
+    vi.mocked(isAuthenticated).mockReturnValue(false)
+
+    const response = await handlers.PATCH({
+      request: new Request('http://localhost/api/dashboard/handoff-status', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ state: 'terminal-working' }),
+      }),
+    })
+
+    expect(response.status).toBe(401)
+    expect(writeJson).not.toHaveBeenCalled()
+  })
+
+  it('fails closed for PATCH when Workspace password authentication is not configured', async () => {
+    vi.mocked(isPasswordProtectionEnabled).mockReturnValue(false)
+
+    const response = await handlers.PATCH({
+      request: new Request('http://localhost/api/dashboard/handoff-status', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ state: 'terminal-working' }),
+      }),
+    })
+
+    expect(response.status).toBe(503)
+    expect(writeJson).not.toHaveBeenCalled()
+  })
+
+  it('rejects PATCH without JSON content type', async () => {
+    const response = await handlers.PATCH({
+      request: new Request('http://localhost/api/dashboard/handoff-status', {
+        method: 'PATCH',
+        headers: { 'content-type': 'text/plain' },
+        body: 'state=terminal-working',
+      }),
+    })
+
+    expect(response.status).toBe(415)
+    expect(writeJson).not.toHaveBeenCalled()
+  })
+
+  it('rejects client source references and impossible terminal transitions', async () => {
+    readJson.mockResolvedValue({
+      version: 1,
+      profileId: 'test2',
+      updatedAt: '2026-07-30T10:00:00.000Z',
+      actor: 'system',
+      state: 'idle',
+    })
+    const response = await handlers.PATCH({
+      request: new Request('http://localhost/api/dashboard/handoff-status', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          state: 'terminal-working',
+          sourceRef: 'browser-must-not-set-this',
+        }),
+      }),
+    })
+
+    expect(response.status).toBe(400)
+    expect(writeJson).not.toHaveBeenCalled()
+  })
+
+  it('refuses to write a status file belonging to another profile', async () => {
+    readJson.mockResolvedValue({
+      version: 1,
+      profileId: 'default',
+      updatedAt: '2026-07-30T10:00:00.000Z',
+      actor: 'brain',
+      state: 'ready-for-terminal',
+    })
+
+    const response = await handlers.PATCH({
+      request: new Request('http://localhost/api/dashboard/handoff-status', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ state: 'terminal-working' }),
+      }),
+    })
+
+    expect(response.status).toBe(400)
+    expect(writeJson).not.toHaveBeenCalled()
   })
 })

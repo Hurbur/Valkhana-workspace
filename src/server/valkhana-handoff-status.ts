@@ -28,6 +28,10 @@ export interface HandoffStatusPatch {
   summary?: string
   nextAction?: string
   blocker?: string
+}
+
+/** Source references are accepted only by the dedicated server-local Brain writer. */
+export interface BrainHandoffStatusPatch extends HandoffStatusPatch {
   sourceRef?: string
 }
 
@@ -130,6 +134,33 @@ export function parseHandoffStatusPatch(value: unknown): HandoffStatusPatch {
     'summary',
     'nextAction',
     'blocker',
+  ])
+  for (const key of Object.keys(record)) {
+    if (!allowedKeys.has(key)) {
+      throw new ValkhanaHandoffStatusError(`handoff patch field is not allowed: ${key}`)
+    }
+  }
+  assertState(record.state)
+  return {
+    state: record.state,
+    summary: normalizeText(record.summary, 'summary'),
+    nextAction: normalizeText(record.nextAction, 'next action'),
+    blocker: normalizeText(record.blocker, 'blocker'),
+  }
+}
+
+export function parseBrainHandoffStatusPatch(
+  value: unknown,
+): BrainHandoffStatusPatch {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new ValkhanaHandoffStatusError('handoff patch must be an object')
+  }
+  const record = value as Record<string, unknown>
+  const allowedKeys = new Set([
+    'state',
+    'summary',
+    'nextAction',
+    'blocker',
     'sourceRef',
   ])
   for (const key of Object.keys(record)) {
@@ -158,19 +189,19 @@ const ACTOR_TRANSITIONS: Record<HandoffActor, Record<HandoffState, ReadonlyArray
   },
   brain: {
     idle: ['brain-working'],
-    'brain-working': ['brain-working', 'ready-for-terminal', 'blocked'],
-    'ready-for-terminal': ['brain-working', 'ready-for-terminal', 'blocked'],
-    'terminal-working': ['blocked'],
-    blocked: ['brain-working', 'blocked'],
+    'brain-working': ['brain-working', 'ready-for-terminal'],
+    'ready-for-terminal': ['brain-working', 'ready-for-terminal'],
+    'terminal-working': [],
+    blocked: ['brain-working'],
     complete: ['brain-working'],
   },
   terminal: {
-    idle: ['terminal-working'],
-    'brain-working': ['blocked'],
+    idle: [],
+    'brain-working': [],
     'ready-for-terminal': ['terminal-working', 'blocked'],
-    'terminal-working': ['terminal-working', 'ready-for-terminal', 'blocked', 'complete'],
-    blocked: ['terminal-working', 'blocked'],
-    complete: ['terminal-working'],
+    'terminal-working': ['terminal-working', 'blocked', 'complete'],
+    blocked: ['terminal-working'],
+    complete: [],
   },
 }
 
@@ -181,8 +212,11 @@ export function applyHandoffStatusPatch(
   now = new Date(),
 ): HandoffStatus {
   const normalizedCurrent = parseHandoffStatus(current)
-  const normalizedPatch = parseHandoffStatusPatch(patch)
   assertActor(actor)
+  const normalizedPatch =
+    actor === 'brain'
+      ? parseBrainHandoffStatusPatch(patch)
+      : parseHandoffStatusPatch(patch)
   if (!ACTOR_TRANSITIONS[actor][normalizedCurrent.state].includes(normalizedPatch.state)) {
     throw new ValkhanaHandoffStatusError(
       `${actor} cannot transition ${normalizedCurrent.state} to ${normalizedPatch.state}`,
