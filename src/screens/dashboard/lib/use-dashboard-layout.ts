@@ -24,6 +24,7 @@ export type WidgetId =
   | 'achievements'
   | 'mix_rhythm'
   | 'daily_briefing'
+  | 'handoff_status'
 
 export type WidgetMeta = {
   id: WidgetId
@@ -126,6 +127,22 @@ export const WIDGET_CATALOG: ReadonlyArray<WidgetMeta> = [
     column: 'rail',
     hideable: true,
   },
+  {
+    id: 'daily_briefing',
+    label: 'Daily briefing',
+    description:
+      'Active profile, registered profiles, and pending cron jobs from the Hermes dashboard.',
+    column: 'rail',
+    hideable: true,
+  },
+  {
+    id: 'handoff_status',
+    label: 'Handoff status',
+    description:
+      'Profile-scoped Brain and terminal coordination status.',
+    column: 'rail',
+    hideable: true,
+  },
 ]
 
 type StoredLayout = {
@@ -150,14 +167,6 @@ const DEFAULT_HIDDEN: ReadonlyArray<WidgetId> = [
   'velocity',
   'cost_ledger',
   'operator_tip',
-  {
-    id: 'daily_briefing',
-    label: 'Daily briefing',
-    description:
-      'Active profile, registered profiles, and pending cron jobs from the Hermes dashboard.',
-    column: 'rail',
-    hideable: true,
-  },
 ]
 
 /**
@@ -166,7 +175,7 @@ const DEFAULT_HIDDEN: ReadonlyArray<WidgetId> = [
  * so existing localStorage entries with `attention` get migrated
  * cleanly instead of silently re-hiding stale ids.
  */
-const STORAGE_VERSION = 4
+const STORAGE_VERSION = 5
 
 function readLayout(): StoredLayout {
   if (typeof window === 'undefined') {

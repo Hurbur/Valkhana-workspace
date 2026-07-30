@@ -174,6 +174,13 @@ export interface ValkhanaProfile {
   [key: string]: unknown
 }
 
+/** A dashboard profile identity paired with the directory the dashboard owns. */
+export interface ValkhanaActiveProfile {
+  id: string
+  name: string
+  path: string
+}
+
 export interface ValkhanaCronJob {
   id: string
   name?: string
@@ -204,6 +211,42 @@ function normalizeActiveProfile(value: unknown): ValkhanaProfile | null {
   return {
     id,
     name: typeof active.name === 'string' ? active.name : id,
+  }
+}
+
+/**
+ * Resolve the active profile exclusively from the authenticated Hermes
+ * dashboard.  Callers receive a dashboard-provided directory only after the
+ * active identity is matched against the dashboard's profile catalogue.
+ */
+export async function fetchValkhanaActiveProfile(): Promise<ValkhanaActiveProfile> {
+  const [profilesResponse, activeResponse] = await Promise.all([
+    valkhanaGet('/api/profiles'),
+    valkhanaGet('/api/profiles/active'),
+  ])
+  const active = normalizeActiveProfile(activeResponse)
+  const profiles =
+    (profilesResponse as { profiles?: Array<ValkhanaProfile> }).profiles ?? []
+
+  if (!active) {
+    throw new ValkhanaAdapterError('dashboard did not report an active profile', 502)
+  }
+
+  const matchingProfile = profiles.find(
+    (profile) => profile.id === active.id || profile.name === active.id,
+  )
+  const path = matchingProfile?.path
+  if (typeof path !== 'string' || path.length === 0) {
+    throw new ValkhanaAdapterError(
+      `dashboard did not provide a directory for active profile ${active.id}`,
+      502,
+    )
+  }
+
+  return {
+    id: matchingProfile.id ?? matchingProfile.name ?? active.id,
+    name: matchingProfile.name ?? matchingProfile.id ?? active.id,
+    path,
   }
 }
 

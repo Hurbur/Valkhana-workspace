@@ -160,6 +160,7 @@ import { Route as ApiExternalMemoryProvidersRouteImport } from './routes/api/ext
 import { Route as ApiExternalMemoryCandidatesRouteImport } from './routes/api/external-memory/candidates'
 import { Route as ApiDashboardValkhanaBriefingRouteImport } from './routes/api/dashboard/valkhana-briefing'
 import { Route as ApiDashboardOverviewRouteImport } from './routes/api/dashboard/overview'
+import { Route as ApiDashboardHandoffStatusRouteImport } from './routes/api/dashboard/handoff-status'
 import { Route as ApiClaudeTasksTaskIdRouteImport } from './routes/api/claude-tasks.$taskId'
 import { Route as ApiClaudeProxySplatRouteImport } from './routes/api/claude-proxy/$'
 import { Route as ApiClaudeJobsJobIdRouteImport } from './routes/api/claude-jobs.$jobId'
@@ -931,6 +932,12 @@ const ApiDashboardOverviewRoute = ApiDashboardOverviewRouteImport.update({
   path: '/api/dashboard/overview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDashboardHandoffStatusRoute =
+  ApiDashboardHandoffStatusRouteImport.update({
+    id: '/api/dashboard/handoff-status',
+    path: '/api/dashboard/handoff-status',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiClaudeTasksTaskIdRoute = ApiClaudeTasksTaskIdRouteImport.update({
   id: '/$taskId',
   path: '/$taskId',
@@ -1094,6 +1101,7 @@ export interface FileRoutesByFullPath {
   '/api/claude-jobs/$jobId': typeof ApiClaudeJobsJobIdRoute
   '/api/claude-proxy/$': typeof ApiClaudeProxySplatRoute
   '/api/claude-tasks/$taskId': typeof ApiClaudeTasksTaskIdRoute
+  '/api/dashboard/handoff-status': typeof ApiDashboardHandoffStatusRoute
   '/api/dashboard/overview': typeof ApiDashboardOverviewRoute
   '/api/dashboard/valkhana-briefing': typeof ApiDashboardValkhanaBriefingRoute
   '/api/external-memory/candidates': typeof ApiExternalMemoryCandidatesRoute
@@ -1256,6 +1264,7 @@ export interface FileRoutesByTo {
   '/api/claude-jobs/$jobId': typeof ApiClaudeJobsJobIdRoute
   '/api/claude-proxy/$': typeof ApiClaudeProxySplatRoute
   '/api/claude-tasks/$taskId': typeof ApiClaudeTasksTaskIdRoute
+  '/api/dashboard/handoff-status': typeof ApiDashboardHandoffStatusRoute
   '/api/dashboard/overview': typeof ApiDashboardOverviewRoute
   '/api/dashboard/valkhana-briefing': typeof ApiDashboardValkhanaBriefingRoute
   '/api/external-memory/candidates': typeof ApiExternalMemoryCandidatesRoute
@@ -1420,6 +1429,7 @@ export interface FileRoutesById {
   '/api/claude-jobs/$jobId': typeof ApiClaudeJobsJobIdRoute
   '/api/claude-proxy/$': typeof ApiClaudeProxySplatRoute
   '/api/claude-tasks/$taskId': typeof ApiClaudeTasksTaskIdRoute
+  '/api/dashboard/handoff-status': typeof ApiDashboardHandoffStatusRoute
   '/api/dashboard/overview': typeof ApiDashboardOverviewRoute
   '/api/dashboard/valkhana-briefing': typeof ApiDashboardValkhanaBriefingRoute
   '/api/external-memory/candidates': typeof ApiExternalMemoryCandidatesRoute
@@ -1585,6 +1595,7 @@ export interface FileRouteTypes {
     | '/api/claude-jobs/$jobId'
     | '/api/claude-proxy/$'
     | '/api/claude-tasks/$taskId'
+    | '/api/dashboard/handoff-status'
     | '/api/dashboard/overview'
     | '/api/dashboard/valkhana-briefing'
     | '/api/external-memory/candidates'
@@ -1747,6 +1758,7 @@ export interface FileRouteTypes {
     | '/api/claude-jobs/$jobId'
     | '/api/claude-proxy/$'
     | '/api/claude-tasks/$taskId'
+    | '/api/dashboard/handoff-status'
     | '/api/dashboard/overview'
     | '/api/dashboard/valkhana-briefing'
     | '/api/external-memory/candidates'
@@ -1910,6 +1922,7 @@ export interface FileRouteTypes {
     | '/api/claude-jobs/$jobId'
     | '/api/claude-proxy/$'
     | '/api/claude-tasks/$taskId'
+    | '/api/dashboard/handoff-status'
     | '/api/dashboard/overview'
     | '/api/dashboard/valkhana-briefing'
     | '/api/external-memory/candidates'
@@ -2068,6 +2081,7 @@ export interface RootRouteChildren {
   ChatSessionKeyRoute: typeof ChatSessionKeyRoute
   ChatIndexRoute: typeof ChatIndexRoute
   ApiClaudeProxySplatRoute: typeof ApiClaudeProxySplatRoute
+  ApiDashboardHandoffStatusRoute: typeof ApiDashboardHandoffStatusRoute
   ApiDashboardOverviewRoute: typeof ApiDashboardOverviewRoute
   ApiDashboardValkhanaBriefingRoute: typeof ApiDashboardValkhanaBriefingRoute
   ApiExternalMemoryCandidatesRoute: typeof ApiExternalMemoryCandidatesRoute
@@ -3158,6 +3172,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDashboardOverviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/dashboard/handoff-status': {
+      id: '/api/dashboard/handoff-status'
+      path: '/api/dashboard/handoff-status'
+      fullPath: '/api/dashboard/handoff-status'
+      preLoaderRoute: typeof ApiDashboardHandoffStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/claude-tasks/$taskId': {
       id: '/api/claude-tasks/$taskId'
       path: '/$taskId'
@@ -3545,6 +3566,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChatSessionKeyRoute: ChatSessionKeyRoute,
   ChatIndexRoute: ChatIndexRoute,
   ApiClaudeProxySplatRoute: ApiClaudeProxySplatRoute,
+  ApiDashboardHandoffStatusRoute: ApiDashboardHandoffStatusRoute,
   ApiDashboardOverviewRoute: ApiDashboardOverviewRoute,
   ApiDashboardValkhanaBriefingRoute: ApiDashboardValkhanaBriefingRoute,
   ApiExternalMemoryCandidatesRoute: ApiExternalMemoryCandidatesRoute,

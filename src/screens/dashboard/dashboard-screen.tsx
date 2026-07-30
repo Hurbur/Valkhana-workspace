@@ -23,6 +23,7 @@ import {
 } from 'recharts'
 import { AchievementsCard } from './components/achievements-card'
 import { DailyBriefingCard } from './components/daily-briefing-card'
+import { HandoffStatusCard } from './components/handoff-status-card'
 import { ActiveModelKpi } from './components/active-model-kpi'
 import { AnalyticsChartCard } from './components/analytics-chart-card'
 import { AttentionMarquee } from './components/attention-marquee'
@@ -1177,9 +1178,16 @@ export function DashboardScreen() {
               achievements={overview?.achievements ?? null}
             />
           </WidgetShell>
-          <WidgetShell id="daily_briefing" layout={layout}>
-            <DailyBriefingCard />
-          </WidgetShell>
+          {layout.isVisible('daily_briefing') ? (
+            <WidgetShell id="daily_briefing" layout={layout}>
+              <DailyBriefingCard />
+            </WidgetShell>
+          ) : null}
+          {layout.isVisible('handoff_status') ? (
+            <WidgetShell id="handoff_status" layout={layout}>
+              <HandoffStatusCard />
+            </WidgetShell>
+          ) : null}
           <WidgetShell id="skills_usage" layout={layout}>
             <SkillsUsageCard
               usage={overview?.skillsUsage ?? null}

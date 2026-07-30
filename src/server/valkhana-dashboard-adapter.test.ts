@@ -1,12 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 let fetchValkhanaBriefing: typeof import('./valkhana-dashboard-adapter').fetchValkhanaBriefing
+let fetchValkhanaActiveProfile: typeof import('./valkhana-dashboard-adapter').fetchValkhanaActiveProfile
 
 beforeEach(async () => {
   vi.resetModules()
   vi.stubEnv('HERMES_DASHBOARD_USERNAME', 'test-dashboard-user')
   vi.stubEnv('HERMES_DASHBOARD_PASSWORD', 'test-dashboard-password')
-  ;({ fetchValkhanaBriefing } = await import('./valkhana-dashboard-adapter'))
+  ;({ fetchValkhanaBriefing, fetchValkhanaActiveProfile } = await import('./valkhana-dashboard-adapter'))
 })
 
 afterEach(() => {
@@ -44,5 +45,44 @@ describe('fetchValkhanaBriefing', () => {
 
     expect(errors).toEqual({})
     expect(data.activeProfile).toEqual({ id: 'default', name: 'default' })
+  })
+})
+
+describe('fetchValkhanaActiveProfile', () => {
+  it('returns the active profile only after matching it to a dashboard-provided path', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: string | URL | Request) => {
+        const url = String(input)
+
+        if (url.endsWith('/auth/password-login')) {
+          return new Response('', {
+            status: 200,
+            headers: { 'set-cookie': 'dashboard_session=test; HttpOnly' },
+          })
+        }
+        if (url.includes('/api/profiles/active')) {
+          return Response.json({ active: 'terminal' })
+        }
+        if (url.includes('/api/profiles')) {
+          return Response.json({
+            profiles: [
+              {
+                name: 'terminal',
+                path: '/home/hermes-v1-test/.hermes/profiles/terminal',
+              },
+            ],
+          })
+        }
+
+        throw new Error(`Unexpected URL: ${url}`)
+      }),
+    )
+
+    await expect(fetchValkhanaActiveProfile()).resolves.toEqual({
+      id: 'terminal',
+      name: 'terminal',
+      path: '/home/hermes-v1-test/.hermes/profiles/terminal',
+    })
   })
 })
