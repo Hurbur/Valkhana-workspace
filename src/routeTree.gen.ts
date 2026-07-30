@@ -158,6 +158,7 @@ import { Route as ApiHermesTasksTaskIdRouteImport } from './routes/api/hermes-ta
 import { Route as ApiExternalMemorySearchRouteImport } from './routes/api/external-memory/search'
 import { Route as ApiExternalMemoryProvidersRouteImport } from './routes/api/external-memory/providers'
 import { Route as ApiExternalMemoryCandidatesRouteImport } from './routes/api/external-memory/candidates'
+import { Route as ApiDashboardValkhanaBriefingRouteImport } from './routes/api/dashboard/valkhana-briefing'
 import { Route as ApiDashboardOverviewRouteImport } from './routes/api/dashboard/overview'
 import { Route as ApiClaudeTasksTaskIdRouteImport } from './routes/api/claude-tasks.$taskId'
 import { Route as ApiClaudeProxySplatRouteImport } from './routes/api/claude-proxy/$'
@@ -919,6 +920,12 @@ const ApiExternalMemoryCandidatesRoute =
     path: '/api/external-memory/candidates',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiDashboardValkhanaBriefingRoute =
+  ApiDashboardValkhanaBriefingRouteImport.update({
+    id: '/api/dashboard/valkhana-briefing',
+    path: '/api/dashboard/valkhana-briefing',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiDashboardOverviewRoute = ApiDashboardOverviewRouteImport.update({
   id: '/api/dashboard/overview',
   path: '/api/dashboard/overview',
@@ -1088,6 +1095,7 @@ export interface FileRoutesByFullPath {
   '/api/claude-proxy/$': typeof ApiClaudeProxySplatRoute
   '/api/claude-tasks/$taskId': typeof ApiClaudeTasksTaskIdRoute
   '/api/dashboard/overview': typeof ApiDashboardOverviewRoute
+  '/api/dashboard/valkhana-briefing': typeof ApiDashboardValkhanaBriefingRoute
   '/api/external-memory/candidates': typeof ApiExternalMemoryCandidatesRoute
   '/api/external-memory/providers': typeof ApiExternalMemoryProvidersRoute
   '/api/external-memory/search': typeof ApiExternalMemorySearchRoute
@@ -1249,6 +1257,7 @@ export interface FileRoutesByTo {
   '/api/claude-proxy/$': typeof ApiClaudeProxySplatRoute
   '/api/claude-tasks/$taskId': typeof ApiClaudeTasksTaskIdRoute
   '/api/dashboard/overview': typeof ApiDashboardOverviewRoute
+  '/api/dashboard/valkhana-briefing': typeof ApiDashboardValkhanaBriefingRoute
   '/api/external-memory/candidates': typeof ApiExternalMemoryCandidatesRoute
   '/api/external-memory/providers': typeof ApiExternalMemoryProvidersRoute
   '/api/external-memory/search': typeof ApiExternalMemorySearchRoute
@@ -1412,6 +1421,7 @@ export interface FileRoutesById {
   '/api/claude-proxy/$': typeof ApiClaudeProxySplatRoute
   '/api/claude-tasks/$taskId': typeof ApiClaudeTasksTaskIdRoute
   '/api/dashboard/overview': typeof ApiDashboardOverviewRoute
+  '/api/dashboard/valkhana-briefing': typeof ApiDashboardValkhanaBriefingRoute
   '/api/external-memory/candidates': typeof ApiExternalMemoryCandidatesRoute
   '/api/external-memory/providers': typeof ApiExternalMemoryProvidersRoute
   '/api/external-memory/search': typeof ApiExternalMemorySearchRoute
@@ -1576,6 +1586,7 @@ export interface FileRouteTypes {
     | '/api/claude-proxy/$'
     | '/api/claude-tasks/$taskId'
     | '/api/dashboard/overview'
+    | '/api/dashboard/valkhana-briefing'
     | '/api/external-memory/candidates'
     | '/api/external-memory/providers'
     | '/api/external-memory/search'
@@ -1737,6 +1748,7 @@ export interface FileRouteTypes {
     | '/api/claude-proxy/$'
     | '/api/claude-tasks/$taskId'
     | '/api/dashboard/overview'
+    | '/api/dashboard/valkhana-briefing'
     | '/api/external-memory/candidates'
     | '/api/external-memory/providers'
     | '/api/external-memory/search'
@@ -1899,6 +1911,7 @@ export interface FileRouteTypes {
     | '/api/claude-proxy/$'
     | '/api/claude-tasks/$taskId'
     | '/api/dashboard/overview'
+    | '/api/dashboard/valkhana-briefing'
     | '/api/external-memory/candidates'
     | '/api/external-memory/providers'
     | '/api/external-memory/search'
@@ -2056,6 +2069,7 @@ export interface RootRouteChildren {
   ChatIndexRoute: typeof ChatIndexRoute
   ApiClaudeProxySplatRoute: typeof ApiClaudeProxySplatRoute
   ApiDashboardOverviewRoute: typeof ApiDashboardOverviewRoute
+  ApiDashboardValkhanaBriefingRoute: typeof ApiDashboardValkhanaBriefingRoute
   ApiExternalMemoryCandidatesRoute: typeof ApiExternalMemoryCandidatesRoute
   ApiExternalMemoryProvidersRoute: typeof ApiExternalMemoryProvidersRoute
   ApiExternalMemorySearchRoute: typeof ApiExternalMemorySearchRoute
@@ -3130,6 +3144,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiExternalMemoryCandidatesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/dashboard/valkhana-briefing': {
+      id: '/api/dashboard/valkhana-briefing'
+      path: '/api/dashboard/valkhana-briefing'
+      fullPath: '/api/dashboard/valkhana-briefing'
+      preLoaderRoute: typeof ApiDashboardValkhanaBriefingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/dashboard/overview': {
       id: '/api/dashboard/overview'
       path: '/api/dashboard/overview'
@@ -3525,6 +3546,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChatIndexRoute: ChatIndexRoute,
   ApiClaudeProxySplatRoute: ApiClaudeProxySplatRoute,
   ApiDashboardOverviewRoute: ApiDashboardOverviewRoute,
+  ApiDashboardValkhanaBriefingRoute: ApiDashboardValkhanaBriefingRoute,
   ApiExternalMemoryCandidatesRoute: ApiExternalMemoryCandidatesRoute,
   ApiExternalMemoryProvidersRoute: ApiExternalMemoryProvidersRoute,
   ApiExternalMemorySearchRoute: ApiExternalMemorySearchRoute,
