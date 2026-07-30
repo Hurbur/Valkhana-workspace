@@ -120,6 +120,26 @@ async function ensureCookie(): Promise<string> {
   return loginInFlight
 }
 
+/**
+ * Shared cookie-forwarding login for any other module that needs to reach
+ * the Hermes dashboard's interactive (cookie-only) routes, e.g.
+ * gateway-capabilities.ts's dashboardFetch — which previously scraped an
+ * ephemeral session token from the dashboard's own root HTML page, fetched
+ * WITHOUT a cookie. That page requires an authenticated session to render
+ * (an anonymous request gets a 302 to /login), so the token it was looking
+ * for was never actually present in the page it fetched - a chicken-and-egg
+ * bug, not a config problem. This reuses the same login()/cookie-cache this
+ * module already uses for the Daily Briefing / Session Organizer cards.
+ */
+export async function getValkhanaDashboardCookie(): Promise<string> {
+  return ensureCookie()
+}
+
+/** Forces the next getValkhanaDashboardCookie() call to log in again. */
+export function invalidateValkhanaDashboardCookie(): void {
+  cachedCookie = null
+}
+
 async function valkhanaGet(
   path: string,
   params?: Record<string, string>,
