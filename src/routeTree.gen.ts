@@ -159,6 +159,7 @@ import { Route as ApiExternalMemorySearchRouteImport } from './routes/api/extern
 import { Route as ApiExternalMemoryProvidersRouteImport } from './routes/api/external-memory/providers'
 import { Route as ApiExternalMemoryCandidatesRouteImport } from './routes/api/external-memory/candidates'
 import { Route as ApiDashboardValkhanaBriefingRouteImport } from './routes/api/dashboard/valkhana-briefing'
+import { Route as ApiDashboardSessionsRouteImport } from './routes/api/dashboard/sessions'
 import { Route as ApiDashboardOverviewRouteImport } from './routes/api/dashboard/overview'
 import { Route as ApiDashboardHandoffStatusRouteImport } from './routes/api/dashboard/handoff-status'
 import { Route as ApiClaudeTasksTaskIdRouteImport } from './routes/api/claude-tasks.$taskId'
@@ -171,7 +172,10 @@ import { Route as ApiMcpHubSourcesIdRouteImport } from './routes/api/mcp/hub-sou
 import { Route as ApiMcpNameLogsRouteImport } from './routes/api/mcp/$name.logs'
 import { Route as ApiInternalHandoffBrainRouteImport } from './routes/api/internal/handoff/brain'
 import { Route as ApiHermesworldReservationsConfirmRouteImport } from './routes/api/hermesworld/reservations/confirm'
+import { Route as ApiDashboardSessionsSnapshotRouteImport } from './routes/api/dashboard/sessions.snapshot'
+import { Route as ApiDashboardSessionsExportRouteImport } from './routes/api/dashboard/sessions.export'
 import { Route as ApiRunsSessionKeyRunIdAbandonRouteImport } from './routes/api/runs/$sessionKey.$runId.abandon'
+import { Route as ApiDashboardSessionsSnapshotIdRouteImport } from './routes/api/dashboard/sessions.snapshot.$id'
 
 const WorldRoute = WorldRouteImport.update({
   id: '/world',
@@ -928,6 +932,11 @@ const ApiDashboardValkhanaBriefingRoute =
     path: '/api/dashboard/valkhana-briefing',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiDashboardSessionsRoute = ApiDashboardSessionsRouteImport.update({
+  id: '/api/dashboard/sessions',
+  path: '/api/dashboard/sessions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDashboardOverviewRoute = ApiDashboardOverviewRouteImport.update({
   id: '/api/dashboard/overview',
   path: '/api/dashboard/overview',
@@ -992,11 +1001,29 @@ const ApiHermesworldReservationsConfirmRoute =
     path: '/confirm',
     getParentRoute: () => ApiHermesworldReservationsRoute,
   } as any)
+const ApiDashboardSessionsSnapshotRoute =
+  ApiDashboardSessionsSnapshotRouteImport.update({
+    id: '/snapshot',
+    path: '/snapshot',
+    getParentRoute: () => ApiDashboardSessionsRoute,
+  } as any)
+const ApiDashboardSessionsExportRoute =
+  ApiDashboardSessionsExportRouteImport.update({
+    id: '/export',
+    path: '/export',
+    getParentRoute: () => ApiDashboardSessionsRoute,
+  } as any)
 const ApiRunsSessionKeyRunIdAbandonRoute =
   ApiRunsSessionKeyRunIdAbandonRouteImport.update({
     id: '/api/runs/$sessionKey/$runId/abandon',
     path: '/api/runs/$sessionKey/$runId/abandon',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiDashboardSessionsSnapshotIdRoute =
+  ApiDashboardSessionsSnapshotIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => ApiDashboardSessionsSnapshotRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -1109,6 +1136,7 @@ export interface FileRoutesByFullPath {
   '/api/claude-tasks/$taskId': typeof ApiClaudeTasksTaskIdRoute
   '/api/dashboard/handoff-status': typeof ApiDashboardHandoffStatusRoute
   '/api/dashboard/overview': typeof ApiDashboardOverviewRoute
+  '/api/dashboard/sessions': typeof ApiDashboardSessionsRouteWithChildren
   '/api/dashboard/valkhana-briefing': typeof ApiDashboardValkhanaBriefingRoute
   '/api/external-memory/candidates': typeof ApiExternalMemoryCandidatesRoute
   '/api/external-memory/providers': typeof ApiExternalMemoryProvidersRoute
@@ -1156,12 +1184,15 @@ export interface FileRoutesByFullPath {
   '/api/update/agent': typeof ApiUpdateAgentRoute
   '/api/update/status': typeof ApiUpdateStatusRoute
   '/api/update/workspace': typeof ApiUpdateWorkspaceRoute
+  '/api/dashboard/sessions/export': typeof ApiDashboardSessionsExportRoute
+  '/api/dashboard/sessions/snapshot': typeof ApiDashboardSessionsSnapshotRouteWithChildren
   '/api/hermesworld/reservations/confirm': typeof ApiHermesworldReservationsConfirmRoute
   '/api/internal/handoff/brain': typeof ApiInternalHandoffBrainRoute
   '/api/mcp/$name/logs': typeof ApiMcpNameLogsRoute
   '/api/mcp/hub-sources/$id': typeof ApiMcpHubSourcesIdRoute
   '/api/sessions/$sessionKey/active-run': typeof ApiSessionsSessionKeyActiveRunRoute
   '/api/sessions/$sessionKey/status': typeof ApiSessionsSessionKeyStatusRoute
+  '/api/dashboard/sessions/snapshot/$id': typeof ApiDashboardSessionsSnapshotIdRoute
   '/api/runs/$sessionKey/$runId/abandon': typeof ApiRunsSessionKeyRunIdAbandonRoute
 }
 export interface FileRoutesByTo {
@@ -1273,6 +1304,7 @@ export interface FileRoutesByTo {
   '/api/claude-tasks/$taskId': typeof ApiClaudeTasksTaskIdRoute
   '/api/dashboard/handoff-status': typeof ApiDashboardHandoffStatusRoute
   '/api/dashboard/overview': typeof ApiDashboardOverviewRoute
+  '/api/dashboard/sessions': typeof ApiDashboardSessionsRouteWithChildren
   '/api/dashboard/valkhana-briefing': typeof ApiDashboardValkhanaBriefingRoute
   '/api/external-memory/candidates': typeof ApiExternalMemoryCandidatesRoute
   '/api/external-memory/providers': typeof ApiExternalMemoryProvidersRoute
@@ -1320,12 +1352,15 @@ export interface FileRoutesByTo {
   '/api/update/agent': typeof ApiUpdateAgentRoute
   '/api/update/status': typeof ApiUpdateStatusRoute
   '/api/update/workspace': typeof ApiUpdateWorkspaceRoute
+  '/api/dashboard/sessions/export': typeof ApiDashboardSessionsExportRoute
+  '/api/dashboard/sessions/snapshot': typeof ApiDashboardSessionsSnapshotRouteWithChildren
   '/api/hermesworld/reservations/confirm': typeof ApiHermesworldReservationsConfirmRoute
   '/api/internal/handoff/brain': typeof ApiInternalHandoffBrainRoute
   '/api/mcp/$name/logs': typeof ApiMcpNameLogsRoute
   '/api/mcp/hub-sources/$id': typeof ApiMcpHubSourcesIdRoute
   '/api/sessions/$sessionKey/active-run': typeof ApiSessionsSessionKeyActiveRunRoute
   '/api/sessions/$sessionKey/status': typeof ApiSessionsSessionKeyStatusRoute
+  '/api/dashboard/sessions/snapshot/$id': typeof ApiDashboardSessionsSnapshotIdRoute
   '/api/runs/$sessionKey/$runId/abandon': typeof ApiRunsSessionKeyRunIdAbandonRoute
 }
 export interface FileRoutesById {
@@ -1439,6 +1474,7 @@ export interface FileRoutesById {
   '/api/claude-tasks/$taskId': typeof ApiClaudeTasksTaskIdRoute
   '/api/dashboard/handoff-status': typeof ApiDashboardHandoffStatusRoute
   '/api/dashboard/overview': typeof ApiDashboardOverviewRoute
+  '/api/dashboard/sessions': typeof ApiDashboardSessionsRouteWithChildren
   '/api/dashboard/valkhana-briefing': typeof ApiDashboardValkhanaBriefingRoute
   '/api/external-memory/candidates': typeof ApiExternalMemoryCandidatesRoute
   '/api/external-memory/providers': typeof ApiExternalMemoryProvidersRoute
@@ -1486,12 +1522,15 @@ export interface FileRoutesById {
   '/api/update/agent': typeof ApiUpdateAgentRoute
   '/api/update/status': typeof ApiUpdateStatusRoute
   '/api/update/workspace': typeof ApiUpdateWorkspaceRoute
+  '/api/dashboard/sessions/export': typeof ApiDashboardSessionsExportRoute
+  '/api/dashboard/sessions/snapshot': typeof ApiDashboardSessionsSnapshotRouteWithChildren
   '/api/hermesworld/reservations/confirm': typeof ApiHermesworldReservationsConfirmRoute
   '/api/internal/handoff/brain': typeof ApiInternalHandoffBrainRoute
   '/api/mcp/$name/logs': typeof ApiMcpNameLogsRoute
   '/api/mcp/hub-sources/$id': typeof ApiMcpHubSourcesIdRoute
   '/api/sessions/$sessionKey/active-run': typeof ApiSessionsSessionKeyActiveRunRoute
   '/api/sessions/$sessionKey/status': typeof ApiSessionsSessionKeyStatusRoute
+  '/api/dashboard/sessions/snapshot/$id': typeof ApiDashboardSessionsSnapshotIdRoute
   '/api/runs/$sessionKey/$runId/abandon': typeof ApiRunsSessionKeyRunIdAbandonRoute
 }
 export interface FileRouteTypes {
@@ -1606,6 +1645,7 @@ export interface FileRouteTypes {
     | '/api/claude-tasks/$taskId'
     | '/api/dashboard/handoff-status'
     | '/api/dashboard/overview'
+    | '/api/dashboard/sessions'
     | '/api/dashboard/valkhana-briefing'
     | '/api/external-memory/candidates'
     | '/api/external-memory/providers'
@@ -1653,12 +1693,15 @@ export interface FileRouteTypes {
     | '/api/update/agent'
     | '/api/update/status'
     | '/api/update/workspace'
+    | '/api/dashboard/sessions/export'
+    | '/api/dashboard/sessions/snapshot'
     | '/api/hermesworld/reservations/confirm'
     | '/api/internal/handoff/brain'
     | '/api/mcp/$name/logs'
     | '/api/mcp/hub-sources/$id'
     | '/api/sessions/$sessionKey/active-run'
     | '/api/sessions/$sessionKey/status'
+    | '/api/dashboard/sessions/snapshot/$id'
     | '/api/runs/$sessionKey/$runId/abandon'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1770,6 +1813,7 @@ export interface FileRouteTypes {
     | '/api/claude-tasks/$taskId'
     | '/api/dashboard/handoff-status'
     | '/api/dashboard/overview'
+    | '/api/dashboard/sessions'
     | '/api/dashboard/valkhana-briefing'
     | '/api/external-memory/candidates'
     | '/api/external-memory/providers'
@@ -1817,12 +1861,15 @@ export interface FileRouteTypes {
     | '/api/update/agent'
     | '/api/update/status'
     | '/api/update/workspace'
+    | '/api/dashboard/sessions/export'
+    | '/api/dashboard/sessions/snapshot'
     | '/api/hermesworld/reservations/confirm'
     | '/api/internal/handoff/brain'
     | '/api/mcp/$name/logs'
     | '/api/mcp/hub-sources/$id'
     | '/api/sessions/$sessionKey/active-run'
     | '/api/sessions/$sessionKey/status'
+    | '/api/dashboard/sessions/snapshot/$id'
     | '/api/runs/$sessionKey/$runId/abandon'
   id:
     | '__root__'
@@ -1935,6 +1982,7 @@ export interface FileRouteTypes {
     | '/api/claude-tasks/$taskId'
     | '/api/dashboard/handoff-status'
     | '/api/dashboard/overview'
+    | '/api/dashboard/sessions'
     | '/api/dashboard/valkhana-briefing'
     | '/api/external-memory/candidates'
     | '/api/external-memory/providers'
@@ -1982,12 +2030,15 @@ export interface FileRouteTypes {
     | '/api/update/agent'
     | '/api/update/status'
     | '/api/update/workspace'
+    | '/api/dashboard/sessions/export'
+    | '/api/dashboard/sessions/snapshot'
     | '/api/hermesworld/reservations/confirm'
     | '/api/internal/handoff/brain'
     | '/api/mcp/$name/logs'
     | '/api/mcp/hub-sources/$id'
     | '/api/sessions/$sessionKey/active-run'
     | '/api/sessions/$sessionKey/status'
+    | '/api/dashboard/sessions/snapshot/$id'
     | '/api/runs/$sessionKey/$runId/abandon'
   fileRoutesById: FileRoutesById
 }
@@ -2095,6 +2146,7 @@ export interface RootRouteChildren {
   ApiClaudeProxySplatRoute: typeof ApiClaudeProxySplatRoute
   ApiDashboardHandoffStatusRoute: typeof ApiDashboardHandoffStatusRoute
   ApiDashboardOverviewRoute: typeof ApiDashboardOverviewRoute
+  ApiDashboardSessionsRoute: typeof ApiDashboardSessionsRouteWithChildren
   ApiDashboardValkhanaBriefingRoute: typeof ApiDashboardValkhanaBriefingRoute
   ApiExternalMemoryCandidatesRoute: typeof ApiExternalMemoryCandidatesRoute
   ApiExternalMemoryProvidersRoute: typeof ApiExternalMemoryProvidersRoute
@@ -3178,6 +3230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDashboardValkhanaBriefingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/dashboard/sessions': {
+      id: '/api/dashboard/sessions'
+      path: '/api/dashboard/sessions'
+      fullPath: '/api/dashboard/sessions'
+      preLoaderRoute: typeof ApiDashboardSessionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/dashboard/overview': {
       id: '/api/dashboard/overview'
       path: '/api/dashboard/overview'
@@ -3262,12 +3321,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHermesworldReservationsConfirmRouteImport
       parentRoute: typeof ApiHermesworldReservationsRoute
     }
+    '/api/dashboard/sessions/snapshot': {
+      id: '/api/dashboard/sessions/snapshot'
+      path: '/snapshot'
+      fullPath: '/api/dashboard/sessions/snapshot'
+      preLoaderRoute: typeof ApiDashboardSessionsSnapshotRouteImport
+      parentRoute: typeof ApiDashboardSessionsRoute
+    }
+    '/api/dashboard/sessions/export': {
+      id: '/api/dashboard/sessions/export'
+      path: '/export'
+      fullPath: '/api/dashboard/sessions/export'
+      preLoaderRoute: typeof ApiDashboardSessionsExportRouteImport
+      parentRoute: typeof ApiDashboardSessionsRoute
+    }
     '/api/runs/$sessionKey/$runId/abandon': {
       id: '/api/runs/$sessionKey/$runId/abandon'
       path: '/api/runs/$sessionKey/$runId/abandon'
       fullPath: '/api/runs/$sessionKey/$runId/abandon'
       preLoaderRoute: typeof ApiRunsSessionKeyRunIdAbandonRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/dashboard/sessions/snapshot/$id': {
+      id: '/api/dashboard/sessions/snapshot/$id'
+      path: '/$id'
+      fullPath: '/api/dashboard/sessions/snapshot/$id'
+      preLoaderRoute: typeof ApiDashboardSessionsSnapshotIdRouteImport
+      parentRoute: typeof ApiDashboardSessionsSnapshotRoute
     }
   }
 }
@@ -3469,6 +3549,34 @@ const ApiSwarmRuntimeRouteWithChildren = ApiSwarmRuntimeRoute._addFileChildren(
   ApiSwarmRuntimeRouteChildren,
 )
 
+interface ApiDashboardSessionsSnapshotRouteChildren {
+  ApiDashboardSessionsSnapshotIdRoute: typeof ApiDashboardSessionsSnapshotIdRoute
+}
+
+const ApiDashboardSessionsSnapshotRouteChildren: ApiDashboardSessionsSnapshotRouteChildren =
+  {
+    ApiDashboardSessionsSnapshotIdRoute: ApiDashboardSessionsSnapshotIdRoute,
+  }
+
+const ApiDashboardSessionsSnapshotRouteWithChildren =
+  ApiDashboardSessionsSnapshotRoute._addFileChildren(
+    ApiDashboardSessionsSnapshotRouteChildren,
+  )
+
+interface ApiDashboardSessionsRouteChildren {
+  ApiDashboardSessionsExportRoute: typeof ApiDashboardSessionsExportRoute
+  ApiDashboardSessionsSnapshotRoute: typeof ApiDashboardSessionsSnapshotRouteWithChildren
+}
+
+const ApiDashboardSessionsRouteChildren: ApiDashboardSessionsRouteChildren = {
+  ApiDashboardSessionsExportRoute: ApiDashboardSessionsExportRoute,
+  ApiDashboardSessionsSnapshotRoute:
+    ApiDashboardSessionsSnapshotRouteWithChildren,
+}
+
+const ApiDashboardSessionsRouteWithChildren =
+  ApiDashboardSessionsRoute._addFileChildren(ApiDashboardSessionsRouteChildren)
+
 interface ApiHermesworldReservationsRouteChildren {
   ApiHermesworldReservationsConfirmRoute: typeof ApiHermesworldReservationsConfirmRoute
 }
@@ -3588,6 +3696,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiClaudeProxySplatRoute: ApiClaudeProxySplatRoute,
   ApiDashboardHandoffStatusRoute: ApiDashboardHandoffStatusRoute,
   ApiDashboardOverviewRoute: ApiDashboardOverviewRoute,
+  ApiDashboardSessionsRoute: ApiDashboardSessionsRouteWithChildren,
   ApiDashboardValkhanaBriefingRoute: ApiDashboardValkhanaBriefingRoute,
   ApiExternalMemoryCandidatesRoute: ApiExternalMemoryCandidatesRoute,
   ApiExternalMemoryProvidersRoute: ApiExternalMemoryProvidersRoute,

@@ -25,6 +25,7 @@ export type WidgetId =
   | 'mix_rhythm'
   | 'daily_briefing'
   | 'handoff_status'
+  | 'session_organizer'
 
 export type WidgetMeta = {
   id: WidgetId
@@ -140,6 +141,14 @@ export const WIDGET_CATALOG: ReadonlyArray<WidgetMeta> = [
     label: 'Handoff status',
     description:
       'Profile-scoped Brain and terminal coordination status.',
+    column: 'rail',
+    hideable: true,
+  },
+  {
+    id: 'session_organizer',
+    label: 'Session organizer',
+    description:
+      'Pin, archive, tag, export, and share live Hermes sessions.',
     column: 'rail',
     hideable: true,
   },

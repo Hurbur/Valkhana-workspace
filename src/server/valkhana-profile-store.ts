@@ -6,7 +6,10 @@ import {
   type ValkhanaActiveProfile,
 } from './valkhana-dashboard-adapter'
 
-export type ProfileMetadataFile = 'handoff-status.json' | 'session-organizer.json'
+export type ProfileMetadataFile =
+  | 'handoff-status.json'
+  | 'session-organizer.json'
+  | 'session-snapshots.json'
 
 export class ValkhanaProfileStoreError extends Error {
   constructor(message: string) {
