@@ -64,6 +64,17 @@ function buildSnapshotFilters(filters: Filters): Record<string, unknown> {
  * require a Workspace login to open. See
  * `src/server/valkhana-session-service.ts` and
  * `src/server/valkhana-session-snapshot.ts` for the server-side contract.
+ *
+ * Scope note: this reads from the Hermes Agent dashboard's own session
+ * store (CLI/cron/Telegram/TUI/browser activity, everything Hermes has
+ * logged) via the cookie-forwarding adapter - a DIFFERENT backend and
+ * likely a different session-id space than the primary chat sidebar's
+ * session list (`src/screens/chat/chat-queries.ts`'s fetchSessions(),
+ * which reads the Workspace's own CLAUDE_API gateway sessions). Pinning a
+ * session here does not affect the sidebar's separate
+ * usePinnedSessions() store, and vice versa - the two are not the same
+ * data, so the card labels itself explicitly rather than implying a
+ * single unified session list.
  */
 export function SessionOrganizerCard() {
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS)
@@ -164,12 +175,20 @@ export function SessionOrganizerCard() {
             strokeWidth={1.5}
             style={{ color: 'var(--theme-muted)' }}
           />
-          <h3
-            className="text-[10px] font-semibold uppercase tracking-[0.18em]"
-            style={{ color: 'var(--theme-text)' }}
-          >
-            Session Organizer
-          </h3>
+          <div>
+            <h3
+              className="text-[10px] font-semibold uppercase tracking-[0.18em]"
+              style={{ color: 'var(--theme-text)' }}
+            >
+              Session Organizer
+            </h3>
+            <p
+              className="text-[8px] leading-tight"
+              style={{ color: 'var(--theme-muted)' }}
+            >
+              Hermes Agent-wide history &mdash; separate from the chat sidebar
+            </p>
+          </div>
         </div>
         <div className="flex gap-1">
           <button

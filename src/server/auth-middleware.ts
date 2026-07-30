@@ -8,6 +8,7 @@ import {
 } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
+import { getRequestIP } from '@tanstack/react-start/server'
 
 /**
  * Persistent session token store.
@@ -218,20 +219,33 @@ function isTrustedProxyEnabled(): boolean {
  * could spoof local classification (#125).
  */
 export function getRequestIp(request: Request): string {
-  if (isTrustedProxyEnabled()) {
+  const trustProxy = isTrustedProxyEnabled()
+  if (trustProxy) {
     const forwarded = request.headers.get('x-forwarded-for')
     const first = forwarded?.split(',')[0]?.trim()
     if (first) return first
     const real = request.headers.get('x-real-ip')?.trim()
     if (real) return real
   }
-  // Node's Request does not expose the socket; the adapter that constructs it
-  // (TanStack Start / undici) may attach `remoteAddress` under a well-known
-  // symbol. Fall back to loopback when nothing is available so we fail *safe*
-  // (no LAN/Tailscale bypass for unknown peers).
-  const maybeAddress = (request as unknown as { remoteAddress?: string })
-    .remoteAddress
-  return (maybeAddress && maybeAddress.trim()) || '127.0.0.1'
+  // Fixed 2026-07-30: a bare Fetch `Request` never carries a socket address
+  // (no `.remoteAddress` property exists on it, in this codebase or the
+  // spec) - the previous code read a property nothing ever wrote, so it
+  // silently fell back to '127.0.0.1' for every single request regardless
+  // of true origin, making every IP-based local/tailnet check pass
+  // unconditionally. The real peer address is available through the
+  // request-scoped H3 event this app's server runtime (h3 v2, via
+  // @tanstack/react-start) maintains via AsyncLocalStorage - use that
+  // instead. Falls back to '127.0.0.1' outside a live request context
+  // (unit tests constructing a bare `Request`), matching prior behavior
+  // there exactly.
+  try {
+    const ip = getRequestIP({ xForwardedFor: trustProxy })
+    if (ip && ip.trim()) return ip.trim()
+  } catch {
+    // No active H3 event (e.g. a unit test constructing a bare Request
+    // outside the server runtime) - fall through to the safe default.
+  }
+  return '127.0.0.1'
 }
 
 export function isLocalRequest(request: Request): boolean {
