@@ -143,13 +143,15 @@ describe('Swarm2 radial view DOM', () => {
       )
       await React.act(async () => { flushFrames(); await Promise.resolve() })
       const initialRequests = raf.mock.calls.length
-      expect(rendered.querySelector('path')?.getAttribute('d')).not.toBeNull()
+      const initialPath = rendered.querySelector('path')?.getAttribute('d')
+      expect(initialPath).not.toBeNull()
       anchorX = 200
       await rerender(
         <Swarm2Wires containerRef={{ current: container }} anchorRef={{ current: anchor }} workerRefs={new Map([['builder', worker]])} workers={[{ id: 'builder', selected: false, inRoom: false }]} version={2} />,
       )
       expect(raf.mock.calls.length).toBeGreaterThan(initialRequests)
       await React.act(async () => { flushFrames(); await Promise.resolve() })
+      expect(rendered.querySelector('path')?.getAttribute('d')).not.toBe(initialPath)
       await unmount()
     } finally {
       frames.splice(0)
