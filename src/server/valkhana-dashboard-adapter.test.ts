@@ -1,9 +1,17 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { fetchValkhanaBriefing } from './valkhana-dashboard-adapter'
+let fetchValkhanaBriefing: typeof import('./valkhana-dashboard-adapter').fetchValkhanaBriefing
+
+beforeEach(async () => {
+  vi.resetModules()
+  vi.stubEnv('HERMES_DASHBOARD_USERNAME', 'test-dashboard-user')
+  vi.stubEnv('HERMES_DASHBOARD_PASSWORD', 'test-dashboard-password')
+  ;({ fetchValkhanaBriefing } = await import('./valkhana-dashboard-adapter'))
+})
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
 })
 
 describe('fetchValkhanaBriefing', () => {
