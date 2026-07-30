@@ -41,8 +41,8 @@ export type Swarm2OrchestratorCardProps = {
   authErrors: number
   selectedLabel: string
   workspaceModel: string | null
-  viewMode: 'cards' | 'kanban' | 'runtime' | 'reports'
-  onViewModeChange: (mode: 'cards' | 'kanban' | 'runtime' | 'reports') => void
+  viewMode: 'cards' | 'radial' | 'kanban' | 'runtime' | 'reports'
+  onViewModeChange: (mode: 'cards' | 'radial' | 'kanban' | 'runtime' | 'reports') => void
   lanes?: Array<{ role: string; count: number; active: number }>
   activeAgents?: Array<{ workerId: string; workerName: string; role: string; task: string; progress: number; state: 'working' | 'reviewing' | 'blocked' | 'ready'; age: string }>
   members: Array<CrewMember>
@@ -167,6 +167,7 @@ export function Swarm2OrchestratorCard({
           <div className="absolute left-0 top-0 flex shrink-0 items-center gap-1 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card)] p-1 shadow-sm">
             {([
               ['cards', 'Control'],
+              ['radial', 'Organization'],
               ['kanban', 'Board'],
               ['reports', 'Inbox'],
               ['runtime', 'Runtime'],
