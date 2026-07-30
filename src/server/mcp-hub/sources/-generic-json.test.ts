@@ -14,17 +14,21 @@ vi.mock('../cache', () => ({
 // src/server/mcp-hub/lib/-ssrf-guard.test.ts. Here we default to allowing all
 // URLs so existing tests continue to work.
 vi.mock('../lib/ssrf-guard', () => ({
-  assertNotPrivate: vi.fn().mockResolvedValue(undefined),
+  resolvePinnedAddress: vi.fn().mockResolvedValue({
+    hostname: 'example.com',
+    address: '93.184.216.34',
+    family: 4,
+  }),
 }))
 
 import { getCache, setCache, touchCache } from '../cache'
-import { assertNotPrivate } from '../lib/ssrf-guard'
+import { resolvePinnedAddress } from '../lib/ssrf-guard'
 import { fetchGenericJson } from './generic-json'
 
 const mockGetCache = vi.mocked(getCache)
 const mockSetCache = vi.mocked(setCache)
 const mockTouchCache = vi.mocked(touchCache)
-const mockAssertNotPrivate = vi.mocked(assertNotPrivate)
+const mockResolvePinnedAddress = vi.mocked(resolvePinnedAddress)
 
 function mockFetch(status: number, body: unknown, headers?: Record<string, string>): void {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
@@ -65,7 +69,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   mockGetCache.mockReturnValue(null)
   // Default: SSRF guard passes
-  mockAssertNotPrivate.mockResolvedValue(undefined)
+  mockResolvePinnedAddress.mockResolvedValue(undefined)
 })
 
 describe('fetchGenericJson', () => {
@@ -219,7 +223,7 @@ describe('fetchGenericJson', () => {
   // ---------------------------------------------------------------------------
   describe('SSRF guard', () => {
     it('returns degraded when SSRF guard rejects the URL', async () => {
-      mockAssertNotPrivate.mockRejectedValue(
+      mockResolvePinnedAddress.mockRejectedValue(
         new Error('SSRF guard: hostname "internal.corp" resolves to private address "10.0.0.1"'),
       )
       const result = await fetchGenericJson('priv-source', 'https://internal.corp/feed', 'community')
@@ -231,14 +235,14 @@ describe('fetchGenericJson', () => {
     it('does not call fetch when SSRF guard rejects', async () => {
       const fetchSpy = vi.fn()
       vi.stubGlobal('fetch', fetchSpy)
-      mockAssertNotPrivate.mockRejectedValue(new Error('SSRF guard: blocked'))
+      mockResolvePinnedAddress.mockRejectedValue(new Error('SSRF guard: blocked'))
 
       await fetchGenericJson('priv-source', 'https://internal.corp/feed', 'community')
       expect(fetchSpy).not.toHaveBeenCalled()
     })
 
     it('proceeds normally when SSRF guard passes', async () => {
-      mockAssertNotPrivate.mockResolvedValue(undefined)
+      mockResolvePinnedAddress.mockResolvedValue(undefined)
       mockFetch(200, [{ name: 'public-server', command: 'npx', args: ['-y', 'public-server'] }])
       const result = await fetchGenericJson('pub-source', 'https://pub.example.com/feed', 'community')
       expect(result.entries).toHaveLength(1)
