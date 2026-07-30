@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: unknown) => options,
@@ -10,29 +10,14 @@ const mocks = vi.hoisted(() => ({
     name: 'default',
     path: '/home/hermes-v1-test/.hermes',
   },
+  resolveActiveProfileStore: vi.fn(),
   readJson: vi.fn(),
   writeJson: vi.fn(),
-  assertBrainWriterAuthorized: vi.fn(),
-  ValkhanaHandoffAuthorizationError: class ValkhanaHandoffAuthorizationError extends Error {
-    status: 401 | 503
-    constructor(message: string, status: 401 | 503) {
-      super(message)
-      this.status = status
-    }
-  },
 }))
 
 vi.mock('../../../../server/valkhana-profile-store', () => ({
-  resolveActiveProfileStore: vi.fn(async () => ({
-    profile: mocks.profile,
-    readJson: mocks.readJson,
-    writeJson: mocks.writeJson,
-  })),
+  resolveActiveProfileStore: mocks.resolveActiveProfileStore,
   ValkhanaProfileStoreError: class ValkhanaProfileStoreError extends Error {},
-}))
-vi.mock('../../../../server/valkhana-handoff-auth', () => ({
-  assertBrainWriterAuthorized: mocks.assertBrainWriterAuthorized,
-  ValkhanaHandoffAuthorizationError: mocks.ValkhanaHandoffAuthorizationError,
 }))
 
 import { Route } from './brain'
@@ -43,6 +28,12 @@ const handler = (Route as {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.stubEnv('HERMES_HANDOFF_BRAIN_TOKEN', 'configured-brain-token')
+  mocks.resolveActiveProfileStore.mockResolvedValue({
+    profile: mocks.profile,
+    readJson: mocks.readJson,
+    writeJson: mocks.writeJson,
+  })
   mocks.readJson.mockResolvedValue({
     version: 1,
     profileId: 'default',
@@ -52,13 +43,17 @@ beforeEach(() => {
   })
 })
 
+afterEach(() => {
+  vi.unstubAllEnvs()
+})
+
 describe('POST /api/internal/handoff/brain', () => {
   it('writes a Brain-owned transition with the dedicated internal authorization contract', async () => {
     const response = await handler({
       request: new Request('http://localhost/api/internal/handoff/brain', {
         method: 'POST',
         headers: {
-          authorization: 'Bearer server-local-token',
+          authorization: 'Bearer configured-brain-token',
           'content-type': 'application/json',
         },
         body: JSON.stringify({
@@ -79,7 +74,6 @@ describe('POST /api/internal/handoff/brain', () => {
       },
     })
     expect(response.status).toBe(200)
-    expect(mocks.assertBrainWriterAuthorized).toHaveBeenCalledTimes(1)
     expect(mocks.writeJson).toHaveBeenCalledWith(
       'handoff-status.json',
       expect.objectContaining({ actor: 'brain', state: 'brain-working' }),
@@ -87,13 +81,6 @@ describe('POST /api/internal/handoff/brain', () => {
   })
 
   it('rejects a Brain writer with a missing token before profile I/O', async () => {
-    mocks.assertBrainWriterAuthorized.mockImplementation(() => {
-      throw new mocks.ValkhanaHandoffAuthorizationError(
-        'Unauthorized: missing token',
-        401,
-      )
-    })
-
     const request = new Request('http://localhost/api/internal/handoff/brain', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -102,19 +89,12 @@ describe('POST /api/internal/handoff/brain', () => {
     const response = await handler({ request })
 
     expect(response.status).toBe(401)
-    expect(mocks.assertBrainWriterAuthorized).toHaveBeenCalledWith(request)
+    expect(mocks.resolveActiveProfileStore).not.toHaveBeenCalled()
     expect(mocks.readJson).not.toHaveBeenCalled()
     expect(mocks.writeJson).not.toHaveBeenCalled()
   })
 
   it('rejects an actual wrong Bearer token before profile I/O', async () => {
-    mocks.assertBrainWriterAuthorized.mockImplementation(() => {
-      throw new mocks.ValkhanaHandoffAuthorizationError(
-        'Unauthorized: wrong token',
-        401,
-      )
-    })
-
     const request = new Request('http://localhost/api/internal/handoff/brain', {
       method: 'POST',
       headers: {
@@ -129,7 +109,7 @@ describe('POST /api/internal/handoff/brain', () => {
       'Bearer deliberately-wrong-token',
     )
     expect(response.status).toBe(401)
-    expect(mocks.assertBrainWriterAuthorized).toHaveBeenCalledWith(request)
+    expect(mocks.resolveActiveProfileStore).not.toHaveBeenCalled()
     expect(mocks.readJson).not.toHaveBeenCalled()
     expect(mocks.writeJson).not.toHaveBeenCalled()
   })
