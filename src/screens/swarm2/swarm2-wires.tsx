@@ -69,6 +69,7 @@ export function Swarm2Wires({
   anchorRef,
   workerRefs,
   workers,
+  version,
 }: Swarm2WiresProps) {
   const [geom, setGeom] = useState<Geom>(EMPTY_GEOM)
   const rafRef = useRef<number | null>(null)
@@ -89,7 +90,7 @@ export function Swarm2Wires({
   useLayoutEffect(() => {
     schedule()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workers.length])
+  }, [workers.length, version])
 
   useEffect(() => {
     schedule()
@@ -108,7 +109,7 @@ export function Swarm2Wires({
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workers.length])
+  }, [workers.length, version])
 
   if (geom.width === 0 || !geom.origin) return null
 

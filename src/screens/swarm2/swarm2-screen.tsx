@@ -728,7 +728,8 @@ function ControlPlaneStage({
   onScrollTmuxSession,
 }: ControlPlaneStageProps) {
   const stageRef = useRef<HTMLDivElement | null>(null)
-  const anchorRef = useRef<HTMLDivElement | null>(null)
+  const cardAnchorRef = useRef<HTMLDivElement | null>(null)
+  const radialHubRef = useRef<HTMLDivElement | null>(null)
   const workerRefsMap = useRef<Map<string, HTMLElement>>(new Map())
   const cardSetters = useRef<
     Map<string, (node: HTMLElement | null) => void>
@@ -738,11 +739,28 @@ function ControlPlaneStage({
     setRefsVersion((value) => value + 1)
   }, [])
 
-  const setAnchor = useCallback((node: HTMLDivElement | null) => {
-    if (anchorRef.current === node) return
-    anchorRef.current = node
+  const setCardAnchor = useCallback((node: HTMLDivElement | null) => {
+    if (cardAnchorRef.current === node) return
+    cardAnchorRef.current = node
     bumpRefsVersion()
   }, [bumpRefsVersion])
+
+  const setRadialHub = useCallback((node: HTMLDivElement | null) => {
+    if (radialHubRef.current === node) return
+    radialHubRef.current = node
+    bumpRefsVersion()
+  }, [bumpRefsVersion])
+
+  const activeAnchorRef = useMemo(
+    () => ({
+      get current() {
+        return viewMode === 'radial'
+          ? radialHubRef.current
+          : cardAnchorRef.current
+      },
+    }),
+    [viewMode],
+  )
 
   const setWorkerRef = useCallback(
     (workerId: string) => {
@@ -794,7 +812,7 @@ function ControlPlaneStage({
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,var(--theme-accent-soft),transparent_42%)]" />
       <Swarm2Wires
         containerRef={stageRef}
-        anchorRef={anchorRef}
+        anchorRef={activeAnchorRef}
         workerRefs={workerRefsMap.current}
         workers={wireTargets}
         version={refsVersion}
@@ -822,7 +840,7 @@ function ControlPlaneStage({
           onRouterResults={() => {
             void onRouterResults()
           }}
-          onAnchorRef={setAnchor}
+          onAnchorRef={setCardAnchor}
           className="w-full max-w-5xl"
         />
         <div className="relative w-full pt-3">
@@ -874,6 +892,7 @@ function ControlPlaneStage({
               onOpenTui={onOpenTui}
               onOpenTasks={onOpenTasks}
               onWorkerRef={setWorkerRef}
+              onHubRef={setRadialHub}
             />
           ) : null}
 

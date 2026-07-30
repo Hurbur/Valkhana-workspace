@@ -18,13 +18,13 @@ export type RadialNodePosition = {
  */
 export function buildRadialNodePositions(count: number): Array<RadialNodePosition> {
   if (count <= 0) return []
-  if (count === 1) return [{ x: 50, y: 50 }]
+  if (count === 1) return [{ x: 50, y: 82 }]
 
   return Array.from({ length: count }, (_, index) => {
     const angle = -Math.PI / 2 + (index * Math.PI * 2) / count
     return {
-      x: Number((50 + Math.cos(angle) * 42).toFixed(3)),
-      y: Number((50 + Math.sin(angle) * 36).toFixed(3)),
+      x: Number((50 + Math.cos(angle) * 32).toFixed(3)),
+      y: Number((50 + Math.sin(angle) * 28).toFixed(3)),
     }
   })
 }
@@ -46,19 +46,45 @@ type Swarm2RadialViewProps = {
   onOpenTui: (workerId: string) => void
   onOpenTasks: (workerId: string) => void
   onWorkerRef: (workerId: string) => (node: HTMLElement | null) => void
+  onHubRef: (node: HTMLDivElement | null) => void
 }
 
-function statusLabel(member: CrewMember, runtime?: RadialRuntime): string {
-  if (runtime?.checkpointStatus === 'blocked' || runtime?.state === 'blocked') return 'Blocked'
-  if (runtime?.checkpointStatus === 'needs_input' || runtime?.state === 'waiting') return 'Waiting'
-  if (runtime?.currentTask) return 'Working'
-  return getOnlineStatus(member) === 'online' ? 'Ready' : 'Offline'
+export type RadialWorkerStatus =
+  | 'Offline'
+  | 'Idle'
+  | 'Blocked'
+  | 'Waiting'
+  | 'Reviewing'
+  | 'Writing'
+  | 'Thinking'
+  | 'Working'
+  | 'Ready'
+
+export function getRadialWorkerStatus(
+  member: Pick<CrewMember, 'profileFound' | 'gatewayState' | 'processAlive'>,
+  runtime?: RadialRuntime,
+): RadialWorkerStatus {
+  const online = getOnlineStatus(member as CrewMember)
+  if (online === 'offline') return 'Offline'
+
+  const cs = runtime?.checkpointStatus ?? null
+  const rs = runtime?.state ?? null
+  if (cs === 'done' || cs === 'handoff' || rs === 'idle') return 'Idle'
+  if (cs === 'blocked' || rs === 'blocked') return 'Blocked'
+  if (cs === 'needs_input' || rs === 'waiting') return 'Waiting'
+  if (!runtime?.currentTask) return online === 'online' ? 'Ready' : 'Idle'
+
+  const task = runtime.currentTask.toLowerCase()
+  if (rs === 'reviewing' || task.includes('review')) return 'Reviewing'
+  if (rs === 'writing' || task.includes('writ') || task.includes('doc')) return 'Writing'
+  if (rs === 'thinking' || task.includes('research') || task.includes('plan') || task.includes('think')) return 'Thinking'
+  return 'Working'
 }
 
 function statusClass(status: string): string {
   if (status === 'Blocked') return 'bg-red-500'
   if (status === 'Waiting') return 'bg-amber-500'
-  if (status === 'Working') return 'bg-emerald-500 animate-pulse'
+  if (status === 'Working' || status === 'Reviewing' || status === 'Writing' || status === 'Thinking') return 'bg-emerald-500 animate-pulse'
   return status === 'Ready' ? 'bg-sky-500' : 'bg-primary-400'
 }
 
@@ -72,6 +98,7 @@ export function Swarm2RadialView({
   onOpenTui,
   onOpenTasks,
   onWorkerRef,
+  onHubRef,
 }: Swarm2RadialViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [compact, setCompact] = useState(false)
@@ -101,15 +128,16 @@ export function Swarm2RadialView({
       aria-label="Swarm organization view"
       className="relative z-10 min-h-[31rem] overflow-hidden rounded-[1.5rem] border border-[var(--theme-border)] bg-[radial-gradient(circle_at_center,var(--theme-accent-soft),transparent_58%)]"
     >
-      <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2 flex size-24 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-[var(--theme-accent)] bg-[var(--theme-card)] text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--theme-accent-strong)] shadow-[0_0_44px_var(--theme-accent-soft-strong)]">
+      <div ref={onHubRef} data-swarm2-anchor="radial-hub" aria-label="Orchestrator hub" className={cn('z-0 flex size-24 items-center justify-center rounded-full border-2 border-[var(--theme-accent)] bg-[var(--theme-card)] text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--theme-accent-strong)] shadow-[0_0_44px_var(--theme-accent-soft-strong)]', compact ? 'relative mx-auto mt-4' : 'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2')}>
         Orchestrator
       </div>
+      <div className={cn(compact ? 'relative z-10 grid grid-cols-1 gap-3 p-4 sm:grid-cols-2' : 'contents')}>
       {members.map((member, index) => {
         const runtime = runtimeByWorker.get(member.id)
         const position = positions[index]
         const selected = member.id === selectedId
         const inRoom = roomIds.includes(member.id)
-        const status = statusLabel(member, runtime)
+        const status = getRadialWorkerStatus(member, runtime)
         const label = member.displayName || member.id
         const task = runtime?.currentTask || member.lastSessionTitle || 'Ready for task'
         return (
@@ -118,11 +146,11 @@ export function Swarm2RadialView({
             ref={onWorkerRef(member.id)}
             data-swarm2-worker-id={member.id}
             className={cn(
-              'absolute z-10 w-44 -translate-x-1/2 -translate-y-1/2 rounded-2xl border bg-[var(--theme-card)] p-3 shadow-[0_14px_34px_var(--theme-shadow)] transition-shadow',
+              compact ? 'relative w-full rounded-2xl border bg-[var(--theme-card)] p-3 shadow-[0_14px_34px_var(--theme-shadow)] transition-shadow' : 'absolute z-10 w-44 -translate-x-1/2 -translate-y-1/2 rounded-2xl border bg-[var(--theme-card)] p-3 shadow-[0_14px_34px_var(--theme-shadow)] transition-shadow',
               selected ? 'border-[var(--theme-accent)] ring-1 ring-[var(--theme-accent-soft-strong)]' : inRoom ? 'border-[var(--theme-border2)]' : 'border-[var(--theme-border)]',
               compact && 'w-36 p-2.5',
             )}
-            style={{ left: `${position.x}%`, top: `${position.y}%` }}
+            style={compact ? undefined : { left: `${position.x}%`, top: `${position.y}%` }}
           >
             <button
               type="button"
@@ -148,9 +176,16 @@ export function Swarm2RadialView({
                 <HugeiconsIcon icon={ComputerTerminal01Icon} size={13} />
               </button>
             </div>
+            {selected ? (
+              <section role="region" aria-label={`Details for ${label}`} className="mt-2 border-t border-[var(--theme-border)] pt-2 text-[10px] leading-snug text-[var(--theme-muted-2)]">
+                <div><span className="font-semibold text-[var(--theme-muted)]">Model:</span> {member.model || member.provider || 'Not reported'}</div>
+                <div className="mt-1"><span className="font-semibold text-[var(--theme-muted)]">Mission:</span> {member.mission || member.specialty || 'No mission reported'}</div>
+              </section>
+            ) : null}
           </article>
         )
       })}
+      </div>
     </section>
   )
 }
