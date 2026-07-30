@@ -3,6 +3,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -27,7 +28,7 @@ let homeDir: string
 let originalHermesHome: string | undefined
 
 function writeSourcesFile(payload: unknown): void {
-  const path = join(homeDir, 'mcp-hub-sources.json')
+  const path = join(homeDir, 'workspace', 'mcp-hub-sources.json')
   writeFileSync(path, typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2))
 }
 
@@ -47,6 +48,7 @@ const VALID_USER_SOURCE = {
 
 beforeEach(() => {
   homeDir = mkdtempSync(join(tmpdir(), 'hermes-hub-sources-'))
+  mkdirSync(join(homeDir, 'workspace'), { recursive: true })
   originalHermesHome = process.env.HERMES_HOME
   process.env.HERMES_HOME = homeDir
   __resetHubSourcesCacheForTests()
@@ -86,12 +88,12 @@ describe('readHubSources', () => {
 
   it('returns source=invalid for malformed JSON, preserves file', async () => {
     writeSourcesFile('not-json{{{{')
-    const before = readFileSync(join(homeDir, 'mcp-hub-sources.json'), 'utf8')
+    const before = readFileSync(join(homeDir, 'workspace', 'mcp-hub-sources.json'), 'utf8')
     const result = await readHubSources()
     expect(result.source).toBe('invalid')
     expect(result.error).toBeTruthy()
     // File is preserved
-    const after = readFileSync(join(homeDir, 'mcp-hub-sources.json'), 'utf8')
+    const after = readFileSync(join(homeDir, 'workspace', 'mcp-hub-sources.json'), 'utf8')
     expect(after).toBe(before)
   })
 

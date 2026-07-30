@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -45,6 +45,7 @@ async function loadRoute(): Promise<PresetsRouteModule> {
 beforeEach(() => {
   vi.resetModules()
   homeDir = mkdtempSync(join(tmpdir(), 'hermes-presets-route-'))
+  mkdirSync(join(homeDir, 'workspace'), { recursive: true })
   const assetDir = mkdtempSync(join(tmpdir(), 'hermes-seed-route-'))
   seedFile = join(assetDir, 'mcp-presets.seed.json')
   writeFileSync(seedFile, JSON.stringify(VALID_SEED))
@@ -95,7 +96,7 @@ describe('GET /api/mcp/presets', () => {
 
   it('returns 200 with source=invalid + error fields when user file is malformed', async () => {
     delete process.env.CLAUDE_PASSWORD
-    writeFileSync(join(homeDir, 'mcp-presets.json'), '{not valid json')
+    writeFileSync(join(homeDir, 'workspace', 'mcp-presets.json'), '{not valid json')
     const mod = await loadRoute()
     const res = await mod.Route.server.handlers.GET({
       request: new Request('http://localhost/api/mcp/presets'),
@@ -111,7 +112,7 @@ describe('GET /api/mcp/presets', () => {
     expect(body.ok).toBe(false)
     expect(body.source).toBe('invalid')
     expect(body.error).toBeTruthy()
-    expect(body.errorPath).toBe(join(homeDir, 'mcp-presets.json'))
+    expect(body.errorPath).toBe(join(homeDir, 'workspace', 'mcp-presets.json'))
     expect((body.validationErrors ?? []).length).toBeGreaterThan(0)
   })
 })
