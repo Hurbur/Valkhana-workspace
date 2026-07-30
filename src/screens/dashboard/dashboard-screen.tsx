@@ -22,6 +22,7 @@ import {
   YAxis,
 } from 'recharts'
 import { AchievementsCard } from './components/achievements-card'
+import { DailyBriefingCard } from './components/daily-briefing-card'
 import { ActiveModelKpi } from './components/active-model-kpi'
 import { AnalyticsChartCard } from './components/analytics-chart-card'
 import { AttentionMarquee } from './components/attention-marquee'
@@ -1175,6 +1176,9 @@ export function DashboardScreen() {
             <AchievementsCard
               achievements={overview?.achievements ?? null}
             />
+          </WidgetShell>
+          <WidgetShell id="daily_briefing" layout={layout}>
+            <DailyBriefingCard />
           </WidgetShell>
           <WidgetShell id="skills_usage" layout={layout}>
             <SkillsUsageCard

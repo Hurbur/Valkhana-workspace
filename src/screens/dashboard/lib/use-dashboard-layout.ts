@@ -23,6 +23,7 @@ export type WidgetId =
   | 'skills_usage'
   | 'achievements'
   | 'mix_rhythm'
+  | 'daily_briefing'
 
 export type WidgetMeta = {
   id: WidgetId
@@ -149,6 +150,14 @@ const DEFAULT_HIDDEN: ReadonlyArray<WidgetId> = [
   'velocity',
   'cost_ledger',
   'operator_tip',
+  {
+    id: 'daily_briefing',
+    label: 'Daily briefing',
+    description:
+      'Active profile, registered profiles, and pending cron jobs from the Hermes dashboard.',
+    column: 'rail',
+    hideable: true,
+  },
 ]
 
 /**
