@@ -54,6 +54,14 @@ const ALLOWED_PATHS = new Set([
   '/api/cron/delivery-targets',
   '/api/cron/blueprints',
 ])
+const SESSION_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/
+
+function isAllowedPath(path: string): boolean {
+  if (ALLOWED_PATHS.has(path)) return true
+  const prefix = '/api/sessions/'
+  if (!path.startsWith(prefix)) return false
+  return SESSION_ID_PATTERN.test(path.slice(prefix.length))
+}
 
 let cachedCookie: string | null = null
 let loginInFlight: Promise<string> | null = null
@@ -116,7 +124,7 @@ async function valkhanaGet(
   path: string,
   params?: Record<string, string>,
 ): Promise<unknown> {
-  if (!ALLOWED_PATHS.has(path)) {
+  if (!isAllowedPath(path)) {
     throw new ValkhanaAdapterError(
       `refusing to fetch un-allowlisted path: ${path}`,
       500,
@@ -189,6 +197,28 @@ export interface ValkhanaCronJob {
   [key: string]: unknown
 }
 
+export interface ValkhanaSession {
+  id: string
+  source: string | null
+  model: string | null
+  title: string | null
+  startedAt: number
+  endedAt: number | null
+  lastActive: number
+  active: boolean
+  messageCount: number
+  toolCallCount: number
+  inputTokens: number
+  outputTokens: number
+}
+
+export interface ValkhanaSessionPage {
+  sessions: Array<ValkhanaSession>
+  total: number
+  limit: number
+  offset: number
+}
+
 export interface ValkhanaBriefingData {
   profiles: Array<ValkhanaProfile>
   activeProfile: ValkhanaProfile | null
@@ -212,6 +242,90 @@ function normalizeActiveProfile(value: unknown): ValkhanaProfile | null {
     id,
     name: typeof active.name === 'string' ? active.name : id,
   }
+}
+
+function finiteNumber(value: unknown, fallback = 0): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback
+}
+
+function nullableString(value: unknown): string | null {
+  return typeof value === 'string' ? value : null
+}
+
+/**
+ * Deliberately project only fields the organizer needs. Raw messages,
+ * previews, prompts, model configuration, credentials, and unknown dashboard
+ * fields stop at this server boundary.
+ */
+function normalizeSession(value: unknown): ValkhanaSession {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new ValkhanaAdapterError('dashboard returned an invalid session row', 502)
+  }
+  const row = value as Record<string, unknown>
+  if (typeof row.id !== 'string' || !SESSION_ID_PATTERN.test(row.id)) {
+    throw new ValkhanaAdapterError('dashboard returned an invalid session id', 502)
+  }
+  return {
+    id: row.id,
+    source: nullableString(row.source),
+    model: nullableString(row.model),
+    title: nullableString(row.title),
+    startedAt: finiteNumber(row.started_at),
+    endedAt:
+      row.ended_at === null || row.ended_at === undefined
+        ? null
+        : finiteNumber(row.ended_at),
+    lastActive: finiteNumber(row.last_active, finiteNumber(row.started_at)),
+    active: row.is_active === true,
+    messageCount: Math.max(0, finiteNumber(row.message_count)),
+    toolCallCount: Math.max(0, finiteNumber(row.tool_call_count)),
+    inputTokens: Math.max(0, finiteNumber(row.input_tokens)),
+    outputTokens: Math.max(0, finiteNumber(row.output_tokens)),
+  }
+}
+
+export async function fetchValkhanaSessions(options: {
+  profile: string
+  limit?: number
+  offset?: number
+}): Promise<ValkhanaSessionPage> {
+  const limit = Math.max(1, Math.min(100, Math.trunc(options.limit ?? 50)))
+  const offset = Math.max(0, Math.trunc(options.offset ?? 0))
+  const response = await valkhanaGet('/api/sessions', {
+    profile: options.profile,
+    limit: String(limit),
+    offset: String(offset),
+    archived: 'include',
+    order: 'recent',
+  })
+  if (!response || typeof response !== 'object' || Array.isArray(response)) {
+    throw new ValkhanaAdapterError('dashboard returned an invalid session page', 502)
+  }
+  const page = response as Record<string, unknown>
+  if (!Array.isArray(page.sessions)) {
+    throw new ValkhanaAdapterError('dashboard session page has no sessions array', 502)
+  }
+  return {
+    sessions: page.sessions.map(normalizeSession),
+    total: Math.max(0, finiteNumber(page.total)),
+    limit: Math.max(1, finiteNumber(page.limit, limit)),
+    offset: Math.max(0, finiteNumber(page.offset, offset)),
+  }
+}
+
+export async function fetchValkhanaSessionDetail(
+  sessionId: string,
+  profile: string,
+): Promise<ValkhanaSession> {
+  if (!SESSION_ID_PATTERN.test(sessionId)) {
+    throw new ValkhanaAdapterError('invalid session id', 400)
+  }
+  const response = await valkhanaGet(`/api/sessions/${sessionId}`, { profile })
+  const session = normalizeSession(response)
+  if (session.id !== sessionId) {
+    throw new ValkhanaAdapterError('dashboard returned a different session id', 502)
+  }
+  return session
 }
 
 /**
