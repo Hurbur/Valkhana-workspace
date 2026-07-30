@@ -86,27 +86,51 @@ describe('POST /api/internal/handoff/brain', () => {
     )
   })
 
-  it.each(['missing token', 'wrong token'])(
-    'rejects a Brain writer with %s before profile I/O',
-    async (reason) => {
-      mocks.assertBrainWriterAuthorized.mockImplementation(() => {
-        throw new mocks.ValkhanaHandoffAuthorizationError(
-          `Unauthorized: ${reason}`,
-          401,
-        )
-      })
+  it('rejects a Brain writer with a missing token before profile I/O', async () => {
+    mocks.assertBrainWriterAuthorized.mockImplementation(() => {
+      throw new mocks.ValkhanaHandoffAuthorizationError(
+        'Unauthorized: missing token',
+        401,
+      )
+    })
 
-      const response = await handler({
-        request: new Request('http://localhost/api/internal/handoff/brain', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ state: 'brain-working' }),
-        }),
-      })
+    const request = new Request('http://localhost/api/internal/handoff/brain', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ state: 'brain-working' }),
+    })
+    const response = await handler({ request })
 
-      expect(response.status).toBe(401)
-      expect(mocks.readJson).not.toHaveBeenCalled()
-      expect(mocks.writeJson).not.toHaveBeenCalled()
-    },
-  )
+    expect(response.status).toBe(401)
+    expect(mocks.assertBrainWriterAuthorized).toHaveBeenCalledWith(request)
+    expect(mocks.readJson).not.toHaveBeenCalled()
+    expect(mocks.writeJson).not.toHaveBeenCalled()
+  })
+
+  it('rejects an actual wrong Bearer token before profile I/O', async () => {
+    mocks.assertBrainWriterAuthorized.mockImplementation(() => {
+      throw new mocks.ValkhanaHandoffAuthorizationError(
+        'Unauthorized: wrong token',
+        401,
+      )
+    })
+
+    const request = new Request('http://localhost/api/internal/handoff/brain', {
+      method: 'POST',
+      headers: {
+        authorization: 'Bearer deliberately-wrong-token',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ state: 'brain-working' }),
+    })
+    const response = await handler({ request })
+
+    expect(request.headers.get('authorization')).toBe(
+      'Bearer deliberately-wrong-token',
+    )
+    expect(response.status).toBe(401)
+    expect(mocks.assertBrainWriterAuthorized).toHaveBeenCalledWith(request)
+    expect(mocks.readJson).not.toHaveBeenCalled()
+    expect(mocks.writeJson).not.toHaveBeenCalled()
+  })
 })

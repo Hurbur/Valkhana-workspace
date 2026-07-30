@@ -35,4 +35,14 @@ describe('Brain handoff writer authorization', () => {
       ),
     ).not.toThrow()
   })
+
+  it('rejects a wrong Bearer token', () => {
+    expect(() =>
+      assertBrainWriterAuthorized(
+        new Request('http://localhost', {
+          headers: { authorization: 'Bearer deliberately-wrong-token' },
+        }),
+      ),
+    ).toThrow('Unauthorized')
+  })
 })
