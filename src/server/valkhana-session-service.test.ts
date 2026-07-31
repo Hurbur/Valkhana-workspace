@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { ValkhanaProfileStore } from './valkhana-profile-store'
 import type { ValkhanaSession } from './valkhana-dashboard-adapter'
+
+const getMessagesMock = vi.fn()
+vi.mock('./claude-api', () => ({
+  getMessages: (sessionId: string) => getMessagesMock(sessionId),
+}))
+
 import {
   exportActiveOrganizedSessions,
   mutateActiveSessionOrganizer,
@@ -164,5 +170,69 @@ describe('profile-scoped session organizer service', () => {
     expect(json.body).not.toContain('preview')
     expect(markdown.body).toContain('# Valkhana Sessions — test2')
     expect(markdown.body).toContain('## Architecture review')
+  })
+
+  it('includes real conversation content only when the export is scoped to a single session', async () => {
+    const { store } = fakeStore()
+    getMessagesMock.mockReset()
+    getMessagesMock.mockResolvedValue([
+      { id: 1, session_id: 'one', role: 'user', content: 'What is the plan?', timestamp: 100 },
+      { id: 2, session_id: 'one', role: 'assistant', content: 'Ship item 5 first.', timestamp: 110 },
+    ])
+    const dependencies = {
+      resolveStore: async () => store,
+      fetchSessions: async () => ({
+        sessions: [session('one', 'Architecture review')],
+        total: 1,
+        limit: 100,
+        offset: 0,
+      }),
+      now: () => new Date('2026-07-30T12:03:00.000Z'),
+    }
+
+    const json = await exportActiveOrganizedSessions(
+      'json',
+      { sessionId: 'one' },
+      dependencies,
+    )
+    const markdown = await exportActiveOrganizedSessions(
+      'markdown',
+      { sessionId: 'one' },
+      dependencies,
+    )
+
+    expect(getMessagesMock).toHaveBeenCalledWith('one')
+    const parsed = JSON.parse(json.body)
+    expect(parsed.sessions[0].messages).toEqual([
+      { role: 'user', content: 'What is the plan?', timestamp: 100 },
+      { role: 'assistant', content: 'Ship item 5 first.', timestamp: 110 },
+    ])
+    expect(markdown.body).toContain('### Transcript')
+    expect(markdown.body).toContain('What is the plan?')
+    expect(markdown.body).toContain('Ship item 5 first.')
+  })
+
+  it('degrades gracefully to metadata-only when the message fetch fails', async () => {
+    const { store } = fakeStore()
+    getMessagesMock.mockReset()
+    getMessagesMock.mockRejectedValue(new Error('dashboard unreachable'))
+    const dependencies = {
+      resolveStore: async () => store,
+      fetchSessions: async () => ({
+        sessions: [session('one', 'Architecture review')],
+        total: 1,
+        limit: 100,
+        offset: 0,
+      }),
+      now: () => new Date('2026-07-30T12:03:00.000Z'),
+    }
+
+    const json = await exportActiveOrganizedSessions(
+      'json',
+      { sessionId: 'one' },
+      dependencies,
+    )
+
+    expect(JSON.parse(json.body).sessions[0].messages).toBeUndefined()
   })
 })

@@ -6,6 +6,7 @@ import {
   fetchValkhanaSessionDetail,
   fetchValkhanaSessions,
 } from './valkhana-dashboard-adapter'
+import { getMessages, type ClaudeMessage } from './claude-api'
 import {
   applySessionOrganizerPatch,
   createSessionOrganizer,
@@ -133,7 +134,10 @@ function safeMarkdownText(value: string | null): string {
   return value.replace(/[\r\n\t]+/g, ' ').replace(/[#*_`[\]<>]/g, '\\$&').trim()
 }
 
-function exportProjection(session: OrganizedSession) {
+function exportProjection(
+  session: OrganizedSession,
+  messages?: Array<ClaudeMessage>,
+) {
   return {
     id: session.id,
     title: session.title,
@@ -154,6 +158,34 @@ function exportProjection(session: OrganizedSession) {
       tags: [...session.metadata.tags],
       updatedAt: session.metadata.updatedAt,
     },
+    ...(messages
+      ? {
+          messages: messages.map((message) => ({
+            role: message.role,
+            content: message.content,
+            timestamp: message.timestamp,
+          })),
+        }
+      : {}),
+  }
+}
+
+/**
+ * Best-effort real conversation content for a single-session export. Only
+ * fetched when filters.sessionId scopes the export to exactly one session -
+ * fetching every message for every session in a bulk/filtered-view export
+ * would be an unbounded N+1 network fan-out, so the multi-session export
+ * stays metadata-only by design. getMessages() already exists and is used
+ * by the main chat UI's own history view (/api/history) - reused directly
+ * rather than inventing a second message-fetch path.
+ */
+async function fetchExportMessages(
+  sessionId: string,
+): Promise<Array<ClaudeMessage> | undefined> {
+  try {
+    return await getMessages(sessionId)
+  } catch {
+    return undefined
   }
 }
 
@@ -211,7 +243,18 @@ export async function exportActiveOrganizedSessions(
 ): Promise<{ body: string; contentType: string; filename: string }> {
   const result = await readActiveOrganizedSessions(filters, dependencies)
   const exportedAt = (dependencies.now?.() ?? new Date()).toISOString()
-  const sessions = result.sessions.map(exportProjection)
+  // Real conversation content only when this export is scoped to exactly
+  // one session (see fetchExportMessages' own doc comment for why).
+  const singleSessionMessages =
+    filters.sessionId && result.sessions.length === 1
+      ? await fetchExportMessages(filters.sessionId)
+      : undefined
+  const sessions = result.sessions.map((session) =>
+    exportProjection(
+      session,
+      session.id === filters.sessionId ? singleSessionMessages : undefined,
+    ),
+  )
   const filenameBase = `valkhana-sessions-${result.profile.id.replace(/[^A-Za-z0-9_-]/g, '-')}`
 
   if (format === 'json') {
@@ -250,6 +293,18 @@ export async function exportActiveOrganizedSessions(
       `- Tool calls: ${session.toolCallCount}`,
       `- Last active: ${new Date(session.lastActive * 1_000).toISOString()}`,
       '',
+      ...('messages' in session && session.messages
+        ? [
+            '### Transcript',
+            '',
+            ...session.messages.flatMap((message) => [
+              `**${safeMarkdownText(message.role)}**`,
+              '',
+              message.content ? safeMarkdownText(message.content) : '_(no text content)_',
+              '',
+            ]),
+          ]
+        : []),
     ]),
   ].join('\n')
   return {
