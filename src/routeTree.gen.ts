@@ -171,6 +171,7 @@ import { Route as ApiSessionsSessionKeyStatusRouteImport } from './routes/api/se
 import { Route as ApiSessionsSessionKeyActiveRunRouteImport } from './routes/api/sessions/$sessionKey.active-run'
 import { Route as ApiMcpHubSourcesIdRouteImport } from './routes/api/mcp/hub-sources.$id'
 import { Route as ApiMcpNameLogsRouteImport } from './routes/api/mcp/$name.logs'
+import { Route as ApiInternalHandoffTerminalRouteImport } from './routes/api/internal/handoff/terminal'
 import { Route as ApiInternalHandoffBrainRouteImport } from './routes/api/internal/handoff/brain'
 import { Route as ApiHermesworldReservationsConfirmRouteImport } from './routes/api/hermesworld/reservations/confirm'
 import { Route as ApiDashboardSessionsSnapshotRouteImport } from './routes/api/dashboard/sessions.snapshot'
@@ -996,6 +997,12 @@ const ApiMcpNameLogsRoute = ApiMcpNameLogsRouteImport.update({
   path: '/logs',
   getParentRoute: () => ApiMcpNameRoute,
 } as any)
+const ApiInternalHandoffTerminalRoute =
+  ApiInternalHandoffTerminalRouteImport.update({
+    id: '/api/internal/handoff/terminal',
+    path: '/api/internal/handoff/terminal',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiInternalHandoffBrainRoute = ApiInternalHandoffBrainRouteImport.update({
   id: '/api/internal/handoff/brain',
   path: '/api/internal/handoff/brain',
@@ -1195,6 +1202,7 @@ export interface FileRoutesByFullPath {
   '/api/dashboard/sessions/snapshot': typeof ApiDashboardSessionsSnapshotRouteWithChildren
   '/api/hermesworld/reservations/confirm': typeof ApiHermesworldReservationsConfirmRoute
   '/api/internal/handoff/brain': typeof ApiInternalHandoffBrainRoute
+  '/api/internal/handoff/terminal': typeof ApiInternalHandoffTerminalRoute
   '/api/mcp/$name/logs': typeof ApiMcpNameLogsRoute
   '/api/mcp/hub-sources/$id': typeof ApiMcpHubSourcesIdRoute
   '/api/sessions/$sessionKey/active-run': typeof ApiSessionsSessionKeyActiveRunRoute
@@ -1364,6 +1372,7 @@ export interface FileRoutesByTo {
   '/api/dashboard/sessions/snapshot': typeof ApiDashboardSessionsSnapshotRouteWithChildren
   '/api/hermesworld/reservations/confirm': typeof ApiHermesworldReservationsConfirmRoute
   '/api/internal/handoff/brain': typeof ApiInternalHandoffBrainRoute
+  '/api/internal/handoff/terminal': typeof ApiInternalHandoffTerminalRoute
   '/api/mcp/$name/logs': typeof ApiMcpNameLogsRoute
   '/api/mcp/hub-sources/$id': typeof ApiMcpHubSourcesIdRoute
   '/api/sessions/$sessionKey/active-run': typeof ApiSessionsSessionKeyActiveRunRoute
@@ -1535,6 +1544,7 @@ export interface FileRoutesById {
   '/api/dashboard/sessions/snapshot': typeof ApiDashboardSessionsSnapshotRouteWithChildren
   '/api/hermesworld/reservations/confirm': typeof ApiHermesworldReservationsConfirmRoute
   '/api/internal/handoff/brain': typeof ApiInternalHandoffBrainRoute
+  '/api/internal/handoff/terminal': typeof ApiInternalHandoffTerminalRoute
   '/api/mcp/$name/logs': typeof ApiMcpNameLogsRoute
   '/api/mcp/hub-sources/$id': typeof ApiMcpHubSourcesIdRoute
   '/api/sessions/$sessionKey/active-run': typeof ApiSessionsSessionKeyActiveRunRoute
@@ -1707,6 +1717,7 @@ export interface FileRouteTypes {
     | '/api/dashboard/sessions/snapshot'
     | '/api/hermesworld/reservations/confirm'
     | '/api/internal/handoff/brain'
+    | '/api/internal/handoff/terminal'
     | '/api/mcp/$name/logs'
     | '/api/mcp/hub-sources/$id'
     | '/api/sessions/$sessionKey/active-run'
@@ -1876,6 +1887,7 @@ export interface FileRouteTypes {
     | '/api/dashboard/sessions/snapshot'
     | '/api/hermesworld/reservations/confirm'
     | '/api/internal/handoff/brain'
+    | '/api/internal/handoff/terminal'
     | '/api/mcp/$name/logs'
     | '/api/mcp/hub-sources/$id'
     | '/api/sessions/$sessionKey/active-run'
@@ -2046,6 +2058,7 @@ export interface FileRouteTypes {
     | '/api/dashboard/sessions/snapshot'
     | '/api/hermesworld/reservations/confirm'
     | '/api/internal/handoff/brain'
+    | '/api/internal/handoff/terminal'
     | '/api/mcp/$name/logs'
     | '/api/mcp/hub-sources/$id'
     | '/api/sessions/$sessionKey/active-run'
@@ -2188,6 +2201,7 @@ export interface RootRouteChildren {
   ApiUpdateStatusRoute: typeof ApiUpdateStatusRoute
   ApiUpdateWorkspaceRoute: typeof ApiUpdateWorkspaceRoute
   ApiInternalHandoffBrainRoute: typeof ApiInternalHandoffBrainRoute
+  ApiInternalHandoffTerminalRoute: typeof ApiInternalHandoffTerminalRoute
   ApiRunsSessionKeyRunIdAbandonRoute: typeof ApiRunsSessionKeyRunIdAbandonRoute
 }
 
@@ -3327,6 +3341,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMcpNameLogsRouteImport
       parentRoute: typeof ApiMcpNameRoute
     }
+    '/api/internal/handoff/terminal': {
+      id: '/api/internal/handoff/terminal'
+      path: '/api/internal/handoff/terminal'
+      fullPath: '/api/internal/handoff/terminal'
+      preLoaderRoute: typeof ApiInternalHandoffTerminalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/internal/handoff/brain': {
       id: '/api/internal/handoff/brain'
       path: '/api/internal/handoff/brain'
@@ -3746,6 +3767,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiUpdateStatusRoute: ApiUpdateStatusRoute,
   ApiUpdateWorkspaceRoute: ApiUpdateWorkspaceRoute,
   ApiInternalHandoffBrainRoute: ApiInternalHandoffBrainRoute,
+  ApiInternalHandoffTerminalRoute: ApiInternalHandoffTerminalRoute,
   ApiRunsSessionKeyRunIdAbandonRoute: ApiRunsSessionKeyRunIdAbandonRoute,
 }
 export const routeTree = rootRouteImport

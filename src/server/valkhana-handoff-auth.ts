@@ -42,6 +42,38 @@ export function assertBrainWriterAuthorized(request: Request): void {
 }
 
 /**
+ * Authorizes the non-browser Terminal writer - a real terminal/CLI-side
+ * consumer of the handoff file, running inside this app's own xterm.js
+ * terminal (a server-side PTY that does not inherit the browser's session
+ * cookie, so assertTerminalBrowserMutationAuthorized below cannot apply
+ * here). Mirrors assertBrainWriterAuthorized's exact pattern - a distinct
+ * token, read only from this server process's own environment, never a
+ * model credential.
+ */
+export function assertTerminalWriterAuthorized(request: Request): void {
+  const configured = process.env.HERMES_HANDOFF_TERMINAL_TOKEN || ''
+  if (!configured) {
+    throw new ValkhanaHandoffAuthorizationError(
+      'Terminal handoff writer is not configured',
+      503,
+    )
+  }
+  const authorization = request.headers.get('authorization') || ''
+  const supplied = authorization.startsWith('Bearer ')
+    ? authorization.slice('Bearer '.length)
+    : ''
+  const expectedBytes = Buffer.from(configured, 'utf8')
+  const suppliedBytes = Buffer.from(supplied, 'utf8')
+  if (
+    !supplied ||
+    suppliedBytes.length !== expectedBytes.length ||
+    !timingSafeEqual(suppliedBytes, expectedBytes)
+  ) {
+    throw new ValkhanaHandoffAuthorizationError('Unauthorized Terminal writer', 401)
+  }
+}
+
+/**
  * Browser writes are allowed only after the operator explicitly configures
  * Workspace password protection and the request carries its valid session.
  * A Tailscale network boundary alone is not sufficient authorization to alter
