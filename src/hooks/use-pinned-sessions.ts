@@ -18,17 +18,35 @@ type PinnedSessionsState = {
  * hook's own localStorage state stays the source of truth for the sidebar's
  * own instant UX; a failed sync (offline, dashboard down) never blocks or
  * reverts the local pin/unpin the user just did.
+ *
+ * One retry after a short delay: a single dropped request (transient
+ * network blip, a moment of dashboard unavailability) used to mean the two
+ * surfaces silently disagreed until the user happened to toggle that same
+ * session again. This does not turn it into a guaranteed-consistent system
+ * (a sustained outage still drifts until the next toggle, which is the
+ * accepted tradeoff described above) - it only closes the common transient
+ * case for free.
  */
-function syncPinToServer(sessionId: string, pinned: boolean): void {
+function syncPinToServer(sessionId: string, pinned: boolean, isRetry = false): void {
   if (typeof window === 'undefined') return
   fetch('/api/dashboard/sessions', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ sessionId, pinned }),
-  }).catch(() => {
-    // Best-effort - the Session Organizer card's own next GET will simply
-    // not reflect this pin until a future successful sync.
   })
+    .then((res) => {
+      if (!res.ok && !isRetry) {
+        setTimeout(() => syncPinToServer(sessionId, pinned, true), 2000)
+      }
+    })
+    .catch(() => {
+      if (!isRetry) {
+        setTimeout(() => syncPinToServer(sessionId, pinned, true), 2000)
+      }
+      // Second attempt's own failure is swallowed here - the Session
+      // Organizer card's own next GET will simply not reflect this pin
+      // until a future successful sync, per the documented tradeoff above.
+    })
 }
 
 export const usePinnedSessionsStore = create<PinnedSessionsState>()(

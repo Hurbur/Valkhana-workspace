@@ -86,4 +86,37 @@ describe('usePinnedSessionsStore server sync', () => {
     expect(usePinnedSessionsStore.getState().pinnedSessionKeys).toEqual(['one'])
     expect(fetchMock).not.toHaveBeenCalled()
   })
+
+  it('retries the sync once after a transient failure, then stops', async () => {
+    vi.useFakeTimers()
+    try {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(new Response(null, { status: 503 }))
+        .mockResolvedValueOnce(new Response(null, { status: 200 }))
+      vi.stubGlobal('fetch', fetchMock)
+
+      usePinnedSessionsStore.getState().pinSession('one')
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+
+      // Let the first call's .then() handler run and schedule the retry.
+      await vi.advanceTimersByTimeAsync(0)
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+
+      await vi.advanceTimersByTimeAsync(2000)
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+      expect(fetchMock).toHaveBeenLastCalledWith(
+        '/api/dashboard/sessions',
+        expect.objectContaining({
+          body: JSON.stringify({ sessionId: 'one', pinned: true }),
+        }),
+      )
+
+      // No third call scheduled even though this retry is itself a 200 (ok).
+      await vi.advanceTimersByTimeAsync(5000)
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })
