@@ -7,11 +7,14 @@ import { exportActiveOrganizedSessions } from '../../../server/valkhana-session-
 
 function parseFilters(url: URL) {
   const filters: {
+    sessionId?: string
     project?: string
     tag?: string
     archived?: boolean
     pinned?: boolean
   } = {}
+  const sessionId = url.searchParams.get('sessionId')
+  if (sessionId) filters.sessionId = sessionId
   const project = url.searchParams.get('project')
   const tag = url.searchParams.get('tag')
   const archived = url.searchParams.get('archived')

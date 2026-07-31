@@ -215,6 +215,7 @@ export function applySessionOrganizerPatch(
 
 export function filterOrganizedSessions<
   T extends {
+    id: string
     metadata: Pick<
       SessionOrganizerMetadata,
       'pinned' | 'archived' | 'project' | 'tags'
@@ -223,6 +224,7 @@ export function filterOrganizedSessions<
 >(
   sessions: Array<T>,
   filters: {
+    sessionId?: string
     project?: string
     tag?: string
     archived?: boolean
@@ -232,6 +234,9 @@ export function filterOrganizedSessions<
   const project = filters.project?.trim().toLowerCase()
   const tag = filters.tag?.trim().toLowerCase()
   return sessions.filter((session) => {
+    if (filters.sessionId && session.id !== filters.sessionId) {
+      return false
+    }
     if (
       project &&
       session.metadata.project?.trim().toLowerCase() !== project

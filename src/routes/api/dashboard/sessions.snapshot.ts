@@ -33,6 +33,12 @@ function parseSnapshotCreateRequest(body: unknown): SnapshotCreateRequest {
   const format = record.format === 'markdown' ? 'markdown' : 'json'
 
   const filters: SessionOrganizerFilters = {}
+  if (record.sessionId !== undefined) {
+    if (typeof record.sessionId !== 'string') {
+      throw new ValkhanaSessionSnapshotError('sessionId must be a string')
+    }
+    filters.sessionId = record.sessionId
+  }
   if (record.project !== undefined) {
     if (typeof record.project !== 'string') {
       throw new ValkhanaSessionSnapshotError('project must be a string')

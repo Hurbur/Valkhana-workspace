@@ -27,6 +27,8 @@ function errorResponse(error: unknown): Response {
 
 function parseFilters(url: URL): SessionOrganizerFilters {
   const filters: SessionOrganizerFilters = {}
+  const sessionId = url.searchParams.get('sessionId')
+  if (sessionId) filters.sessionId = sessionId
   const project = url.searchParams.get('project')
   const tag = url.searchParams.get('tag')
   const archived = url.searchParams.get('archived')

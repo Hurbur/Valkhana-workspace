@@ -9,7 +9,7 @@ import {
   Pen01Icon,
   PinIcon,
 } from '@hugeicons/core-free-icons'
-import { memo, useMemo } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { getMessageTimestamp } from '../../utils'
 import type { SessionMeta } from '../../types'
 import { cn } from '@/lib/utils'
@@ -19,6 +19,7 @@ import {
   MenuRoot,
   MenuTrigger,
 } from '@/components/ui/menu'
+import { SessionOrganizeDialog } from './session-organize-dialog'
 
 type SessionItemProps = {
   session: SessionMeta
@@ -109,6 +110,7 @@ function SessionItemComponent({
   const isGenerating = session.titleStatus === 'generating'
   const isError = session.titleStatus === 'error'
   const baseTitle = getSessionDisplayTitle(session, isGenerating)
+  const [organizeOpen, setOrganizeOpen] = useState(false)
 
   const updatedAt = useMemo(() => {
     if (typeof session.updatedAt === 'number') return session.updatedAt
@@ -202,16 +204,12 @@ function SessionItemComponent({
             onClick={(event) => {
               event.preventDefault()
               event.stopPropagation()
-              // Archive/tag/project/export/share-link live in the Session
-              // Organizer dashboard card, not duplicated here - this opens
-              // it directly instead of leaving those features undiscoverable
-              // from the sidebar.
-              window.location.href = '/dashboard#session_organizer'
+              setOrganizeOpen(true)
             }}
             className="gap-2"
           >
             <HugeiconsIcon icon={Folder01Icon} size={20} strokeWidth={1.5} />{' '}
-            Archive, tag, or export&hellip;
+            Archive, tag, export, or share&hellip;
           </MenuItem>
           <MenuItem
             onClick={(event) => {
@@ -237,6 +235,12 @@ function SessionItemComponent({
           </MenuItem>
         </MenuContent>
       </MenuRoot>
+      <SessionOrganizeDialog
+        open={organizeOpen}
+        onOpenChange={setOrganizeOpen}
+        sessionId={session.key}
+        sessionTitle={baseTitle}
+      />
     </Link>
   )
 }

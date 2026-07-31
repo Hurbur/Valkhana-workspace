@@ -28,6 +28,7 @@ export type OrganizedSession = ValkhanaSession & {
 }
 
 export type SessionOrganizerFilters = {
+  sessionId?: string
   project?: string
   tag?: string
   archived?: boolean
