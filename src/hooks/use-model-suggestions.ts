@@ -158,24 +158,20 @@ function isSessionDismissed(sessionKey: string): boolean {
   return dismissals.some((d) => d.sessionKey === sessionKey)
 }
 
-export function useModelSuggestions(_opts: {
-  currentModel: string
-  sessionKey: string
-  messages: Array<Message>
-  availableModels: Array<string>
-}) {
-  // DISABLED: was causing infinite re-render loop (Maximum update depth exceeded)
-  // TODO: fix the dependency array / memoization and re-enable
-  return {
-    suggestion: null as Suggestion | null,
-    dismiss: () => {},
-    dismissForSession: () => {},
-  }
-}
-
-// -ignore -- disabled, will re-enable after fixing deps
-
-function _useModelSuggestionsDisabled({
+/**
+ * Re-enabled 2026-07-31. The original "Maximum update depth exceeded" loop
+ * came from the effect below depending on the `messages`/`availableModels`
+ * array references directly - chat-screen.tsx passes a freshly-mapped
+ * `messages` array on every render (`historyMessages.map(...)`), so a
+ * reference-based dependency re-fired the effect every render regardless of
+ * whether anything actually changed. The fix (already present here, just
+ * never re-enabled) is depending on `messages.length`/`availableModels.length`
+ * instead - stable primitives that only change when the content actually
+ * does. Verified: this hook's only real caller is chat-screen.tsx, and its
+ * own downstream consumers (handleSwitchModel's useCallback) don't feed
+ * back into this hook's dependencies, so there's no remaining cycle.
+ */
+export function useModelSuggestions({
   currentModel,
   sessionKey,
   messages,

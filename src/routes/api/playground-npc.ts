@@ -21,6 +21,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { openaiChat } from '../../server/openai-compat-api'
 import { ensureGatewayProbed } from '../../server/gateway-capabilities'
+import { getClientIp, rateLimit, rateLimitResponse } from '../../server/rate-limit'
 
 type NpcPersona = {
   id: string
@@ -147,6 +148,14 @@ export const Route = createFileRoute('/api/playground-npc')({
     handlers: {
       POST: async ({ request }) => {
         const t0 = Date.now()
+        // Public-by-design (no login required for the Playground demo), so
+        // rate-limit per IP instead of gating behind auth - caps resource
+        // abuse (arbitrary LLM token spend through the gateway) without
+        // breaking the intended no-login UX.
+        const clientIp = getClientIp(request)
+        if (!rateLimit(`playground-npc:${clientIp}`, 20, 60_000)) {
+          return rateLimitResponse()
+        }
         let body: Body
         try {
           body = (await request.json()) as Body

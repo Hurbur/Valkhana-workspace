@@ -555,14 +555,70 @@ export function buildDisplayEntries(
     entries.push(entry)
   })
 
-  if (pendingAssistantToolMessages.length > 0) {
-    const previousEntry = entries[entries.length - 1]
-    if (previousEntry?.message.role === 'assistant') {
-      previousEntry.attachedToolMessages.push(...pendingAssistantToolMessages)
+  // Trailing tool-only assistant messages with nothing after them to
+  // resolve them (no later real assistant-text message) are deliberately
+  // NOT attached to the last entry - a previous version of this function
+  // glued them onto the prior text reply, which misrepresented a later,
+  // separate, still-in-flight tool turn as part of an earlier finished
+  // one. Callers that want to surface this trailing activity (e.g. a
+  // working on N more tool calls indicator) should use
+  // getTrailingToolOnlyTurnSummary() instead.
+
+  return entries
+}
+
+export type TrailingToolOnlyTurnSummary = {
+  count: number
+  toolNames: Array<string>
+  hasFinalAssistantText: boolean
+}
+
+/**
+ * Detects a trailing run of tool-only-assistant / tool / toolResult
+ * messages at the end of the thread that buildDisplayEntries() does not
+ * attach anywhere (see the comment above). Returns null when the thread
+ * already ends with real assistant text (nothing hidden) or is empty.
+ */
+export function getTrailingToolOnlyTurnSummary(
+  displayMessages: Array<ChatMessage>,
+): TrailingToolOnlyTurnSummary | null {
+  let cursor = displayMessages.length - 1
+  const trailing: Array<ChatMessage> = []
+
+  while (cursor >= 0) {
+    const message = displayMessages[cursor]
+    const isToolOnly = isAssistantToolCallOnlyMessage(message)
+    const isToolMessage = message.role === 'tool' || message.role === 'toolResult'
+    if (!isToolOnly && !isToolMessage) break
+    trailing.unshift(message)
+    cursor--
+  }
+
+  if (trailing.length === 0) return null
+
+  const hasFinalAssistantText = displayMessages
+    .slice(0, cursor + 1)
+    .some(
+      (message) =>
+        message.role === 'assistant' && textFromMessage(message).trim().length > 0,
+    )
+
+  const toolNames = new Set<string>()
+  for (const message of trailing) {
+    if (isAssistantToolCallOnlyMessage(message)) {
+      for (const call of getToolCallsFromMessage(message)) {
+        if (call.name) toolNames.add(call.name)
+      }
+    } else if (message.toolName) {
+      toolNames.add(message.toolName)
     }
   }
 
-  return entries
+  return {
+    count: trailing.length,
+    toolNames: Array.from(toolNames),
+    hasFinalAssistantText,
+  }
 }
 
 function escapeAttributeSelector(value: string): string {

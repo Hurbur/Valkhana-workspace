@@ -92,9 +92,20 @@ const config = defineConfig(({ mode, command }) => {
   // reads env vars directly from process.env (e.g. getBearerToken() in
   // openai-compat-api.ts reads process.env.HERMES_API_TOKEN). Without this,
   // Vite's loadEnv only populates the local `env` object — not process.env.
-  for (const key of Object.keys(env)) {
-    if (!(key in process.env)) {
-      process.env[key] = env[key]
+  //
+  // Skipped entirely under Vitest (process.env.VITEST, set by Vitest
+  // itself - see https://vitest.dev/config/#test-env): tests must stay
+  // hermetic and not silently inherit whatever real secrets happen to be
+  // in the operator's local .env (e.g. HERMES_PASSWORD). A test that needs
+  // a specific env var already sets/mocks it explicitly (see
+  // auth-middleware.test.ts's beforeEach/afterEach pattern); bridging the
+  // real file here defeated that isolation and made test outcomes depend
+  // on the local deployment's configuration instead of the test's own setup.
+  if (!process.env.VITEST) {
+    for (const key of Object.keys(env)) {
+      if (!(key in process.env)) {
+        process.env[key] = env[key]
+      }
     }
   }
   const claudeApiUrl = env.CLAUDE_API_URL?.trim() || 'http://127.0.0.1:8642'
@@ -433,11 +444,18 @@ const config = defineConfig(({ mode, command }) => {
 
   return {
     test: {
+      setupFiles: ['./vitest.setup.ts'],
       exclude: [
         '**/node_modules/**',
         '**/dist/**',
         '**/skills-bundle/**',
         '**/.{idea,git,cache,output,temp}/**',
+        // .worktrees/ holds full nested checkouts (git worktree add) inside
+        // this repo (gitignored, see .gitignore) - without this exclusion,
+        // vitest's default glob matches their test files too, running every
+        // test twice (main tree + duplicate inside the worktree) whenever a
+        // worktree happens to exist locally.
+        '**/.worktrees/**',
       ],
       // Force vitest to run React through its own transform pipeline so ESM
       // `import` and CJS `require('react')` share a single module instance.
