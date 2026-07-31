@@ -162,6 +162,7 @@ import { Route as ApiDashboardValkhanaBriefingRouteImport } from './routes/api/d
 import { Route as ApiDashboardSessionsRouteImport } from './routes/api/dashboard/sessions'
 import { Route as ApiDashboardOverviewRouteImport } from './routes/api/dashboard/overview'
 import { Route as ApiDashboardHandoffStatusRouteImport } from './routes/api/dashboard/handoff-status'
+import { Route as ApiDashboardGatewayChatRouteImport } from './routes/api/dashboard/gateway-chat'
 import { Route as ApiClaudeTasksTaskIdRouteImport } from './routes/api/claude-tasks.$taskId'
 import { Route as ApiClaudeProxySplatRouteImport } from './routes/api/claude-proxy/$'
 import { Route as ApiClaudeJobsJobIdRouteImport } from './routes/api/claude-jobs.$jobId'
@@ -948,6 +949,11 @@ const ApiDashboardHandoffStatusRoute =
     path: '/api/dashboard/handoff-status',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiDashboardGatewayChatRoute = ApiDashboardGatewayChatRouteImport.update({
+  id: '/api/dashboard/gateway-chat',
+  path: '/api/dashboard/gateway-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiClaudeTasksTaskIdRoute = ApiClaudeTasksTaskIdRouteImport.update({
   id: '/$taskId',
   path: '/$taskId',
@@ -1134,6 +1140,7 @@ export interface FileRoutesByFullPath {
   '/api/claude-jobs/$jobId': typeof ApiClaudeJobsJobIdRoute
   '/api/claude-proxy/$': typeof ApiClaudeProxySplatRoute
   '/api/claude-tasks/$taskId': typeof ApiClaudeTasksTaskIdRoute
+  '/api/dashboard/gateway-chat': typeof ApiDashboardGatewayChatRoute
   '/api/dashboard/handoff-status': typeof ApiDashboardHandoffStatusRoute
   '/api/dashboard/overview': typeof ApiDashboardOverviewRoute
   '/api/dashboard/sessions': typeof ApiDashboardSessionsRouteWithChildren
@@ -1302,6 +1309,7 @@ export interface FileRoutesByTo {
   '/api/claude-jobs/$jobId': typeof ApiClaudeJobsJobIdRoute
   '/api/claude-proxy/$': typeof ApiClaudeProxySplatRoute
   '/api/claude-tasks/$taskId': typeof ApiClaudeTasksTaskIdRoute
+  '/api/dashboard/gateway-chat': typeof ApiDashboardGatewayChatRoute
   '/api/dashboard/handoff-status': typeof ApiDashboardHandoffStatusRoute
   '/api/dashboard/overview': typeof ApiDashboardOverviewRoute
   '/api/dashboard/sessions': typeof ApiDashboardSessionsRouteWithChildren
@@ -1472,6 +1480,7 @@ export interface FileRoutesById {
   '/api/claude-jobs/$jobId': typeof ApiClaudeJobsJobIdRoute
   '/api/claude-proxy/$': typeof ApiClaudeProxySplatRoute
   '/api/claude-tasks/$taskId': typeof ApiClaudeTasksTaskIdRoute
+  '/api/dashboard/gateway-chat': typeof ApiDashboardGatewayChatRoute
   '/api/dashboard/handoff-status': typeof ApiDashboardHandoffStatusRoute
   '/api/dashboard/overview': typeof ApiDashboardOverviewRoute
   '/api/dashboard/sessions': typeof ApiDashboardSessionsRouteWithChildren
@@ -1643,6 +1652,7 @@ export interface FileRouteTypes {
     | '/api/claude-jobs/$jobId'
     | '/api/claude-proxy/$'
     | '/api/claude-tasks/$taskId'
+    | '/api/dashboard/gateway-chat'
     | '/api/dashboard/handoff-status'
     | '/api/dashboard/overview'
     | '/api/dashboard/sessions'
@@ -1811,6 +1821,7 @@ export interface FileRouteTypes {
     | '/api/claude-jobs/$jobId'
     | '/api/claude-proxy/$'
     | '/api/claude-tasks/$taskId'
+    | '/api/dashboard/gateway-chat'
     | '/api/dashboard/handoff-status'
     | '/api/dashboard/overview'
     | '/api/dashboard/sessions'
@@ -1980,6 +1991,7 @@ export interface FileRouteTypes {
     | '/api/claude-jobs/$jobId'
     | '/api/claude-proxy/$'
     | '/api/claude-tasks/$taskId'
+    | '/api/dashboard/gateway-chat'
     | '/api/dashboard/handoff-status'
     | '/api/dashboard/overview'
     | '/api/dashboard/sessions'
@@ -2144,6 +2156,7 @@ export interface RootRouteChildren {
   ChatSessionKeyRoute: typeof ChatSessionKeyRoute
   ChatIndexRoute: typeof ChatIndexRoute
   ApiClaudeProxySplatRoute: typeof ApiClaudeProxySplatRoute
+  ApiDashboardGatewayChatRoute: typeof ApiDashboardGatewayChatRoute
   ApiDashboardHandoffStatusRoute: typeof ApiDashboardHandoffStatusRoute
   ApiDashboardOverviewRoute: typeof ApiDashboardOverviewRoute
   ApiDashboardSessionsRoute: typeof ApiDashboardSessionsRouteWithChildren
@@ -3251,6 +3264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDashboardHandoffStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/dashboard/gateway-chat': {
+      id: '/api/dashboard/gateway-chat'
+      path: '/api/dashboard/gateway-chat'
+      fullPath: '/api/dashboard/gateway-chat'
+      preLoaderRoute: typeof ApiDashboardGatewayChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/claude-tasks/$taskId': {
       id: '/api/claude-tasks/$taskId'
       path: '/$taskId'
@@ -3694,6 +3714,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChatSessionKeyRoute: ChatSessionKeyRoute,
   ChatIndexRoute: ChatIndexRoute,
   ApiClaudeProxySplatRoute: ApiClaudeProxySplatRoute,
+  ApiDashboardGatewayChatRoute: ApiDashboardGatewayChatRoute,
   ApiDashboardHandoffStatusRoute: ApiDashboardHandoffStatusRoute,
   ApiDashboardOverviewRoute: ApiDashboardOverviewRoute,
   ApiDashboardSessionsRoute: ApiDashboardSessionsRouteWithChildren,
