@@ -4,6 +4,7 @@ import { Link } from '@tanstack/react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   Delete01Icon,
+  Folder01Icon,
   MoreHorizontalIcon,
   Pen01Icon,
   PinIcon,
@@ -196,6 +197,21 @@ function SessionItemComponent({
           >
             <HugeiconsIcon icon={PinIcon} size={20} strokeWidth={1.5} />{' '}
             {isPinned ? 'Unpin session' : 'Pin session'}
+          </MenuItem>
+          <MenuItem
+            onClick={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              // Archive/tag/project/export/share-link live in the Session
+              // Organizer dashboard card, not duplicated here - this opens
+              // it directly instead of leaving those features undiscoverable
+              // from the sidebar.
+              window.location.href = '/dashboard#session_organizer'
+            }}
+            className="gap-2"
+          >
+            <HugeiconsIcon icon={Folder01Icon} size={20} strokeWidth={1.5} />{' '}
+            Archive, tag, or export&hellip;
           </MenuItem>
           <MenuItem
             onClick={(event) => {

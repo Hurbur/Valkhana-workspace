@@ -161,7 +161,8 @@ export function SessionOrganizerCard() {
 
   return (
     <div
-      className="relative overflow-hidden rounded-xl border p-3"
+      id="session_organizer"
+      className="relative overflow-hidden rounded-xl border p-3 scroll-mt-4"
       style={{
         background: 'var(--theme-card)',
         borderColor: 'var(--theme-border)',
