@@ -439,6 +439,7 @@ function HermesContent() {
         body: JSON.stringify(updates),
       })
       const r = (await res.json()) as { message?: string }
+      if (!res.ok) throw new Error(r.message || `Save failed: ${res.status}`)
       setMsg(r.message || 'Saved')
       await refreshConfig()
       setTimeout(() => setMsg(null), 3000)
@@ -2196,11 +2197,12 @@ function AgentBehaviorContent() {
   const save = async (key: string, value: unknown) => {
     setMsg(null)
     try {
-      await fetch('/api/hermes-config', {
+      const res = await fetch('/api/hermes-config', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ config: { agent: { [key]: value } } }),
       })
+      if (!res.ok) throw new Error(`Save failed: ${res.status}`)
       setConfig((prev) => ({ ...prev, [key]: value }))
       setMsg('Saved')
       setTimeout(() => setMsg(null), 2000)
@@ -2287,11 +2289,12 @@ function VoiceContent() {
   const saveTts = async (key: string, value: unknown) => {
     setMsg(null)
     try {
-      await fetch('/api/hermes-config', {
+      const res = await fetch('/api/hermes-config', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ config: { tts: { [key]: value } } }),
       })
+      if (!res.ok) throw new Error(`Save failed: ${res.status}`)
       setTts((prev) => ({ ...prev, [key]: value }))
       setMsg('Saved')
       setTimeout(() => setMsg(null), 2000)
@@ -2303,11 +2306,12 @@ function VoiceContent() {
   const saveStt = async (key: string, value: unknown) => {
     setMsg(null)
     try {
-      await fetch('/api/hermes-config', {
+      const res = await fetch('/api/hermes-config', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ config: { stt: { [key]: value } } }),
       })
+      if (!res.ok) throw new Error(`Save failed: ${res.status}`)
       setStt((prev) => ({ ...prev, [key]: value }))
       setMsg('Saved')
       setTimeout(() => setMsg(null), 2000)
@@ -2456,11 +2460,12 @@ function DisplayContent() {
   const save = async (key: string, value: unknown) => {
     setMsg(null)
     try {
-      await fetch('/api/hermes-config', {
+      const res = await fetch('/api/hermes-config', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ config: { display: { [key]: value } } }),
       })
+      if (!res.ok) throw new Error(`Save failed: ${res.status}`)
       setConfig((prev) => ({ ...prev, [key]: value }))
       setMsg('Saved')
       setTimeout(() => setMsg(null), 2000)

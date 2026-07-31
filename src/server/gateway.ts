@@ -84,7 +84,15 @@ function getDeviceIdentity(): DeviceIdentity {
         return _identity
       }
     }
-  } catch { /* regenerate */ }
+  } catch (error) {
+    // Existing identity file is present but unreadable/corrupt. Regenerating
+    // silently would rotate the device's public key without telling the
+    // operator, breaking any pairing/trust relationship keyed on the old
+    // deviceId. Log so this is visible instead of a mysterious re-pair.
+    console.warn(
+      `[gateway] Failed to read device identity at ${idPath}, regenerating: ${error instanceof Error ? error.message : String(error)}`,
+    )
+  }
   const { publicKey, privateKey } = generateKeyPairSync('ed25519')
   const pubPem = publicKey.export({ type: 'spki', format: 'pem' }).toString()
   const privPem = privateKey.export({ type: 'pkcs8', format: 'pem' }).toString()

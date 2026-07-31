@@ -123,7 +123,8 @@ export function readSwarmRoster(ids: Array<string> = []): SwarmRoster {
       if (!byId.has(fallback.id)) byId.set(fallback.id, fallback)
     }
     return { version: parsed.version, workers: [...byId.values()] }
-  } catch {
+  } catch (err) {
+    console.error(`[swarm-roster] Failed to read/parse ${SWARM_ROSTER_PATH}, falling back to default roster:`, err)
     return fallbackRoster(ids)
   }
 }

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { ArrowDown01Icon, ArrowRight01Icon, PlayIcon, Rocket01Icon, Search01Icon, Settings01Icon, TaskDone01Icon } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
+import { toast } from '@/components/ui/toast'
 import { WorkflowHelpModal } from '@/components/workflow-help-modal'
 import { Markdown } from '@/components/prompt-kit/markdown'
 import { OfficeView } from './components/office-view'
@@ -2273,8 +2274,8 @@ export function Conductor() {
                   if (!conductor.orchestratorSessionKey) return
                   try {
                     await conductor.pauseAgent(conductor.orchestratorSessionKey, !conductor.isPaused)
-                  } catch {
-                    // best effort
+                  } catch (error) {
+                    toast(error instanceof Error ? error.message : 'Failed to toggle pause', { type: 'error' })
                   }
                 }}
                 className={cn(

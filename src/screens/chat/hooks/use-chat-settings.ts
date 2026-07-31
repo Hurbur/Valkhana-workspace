@@ -56,20 +56,16 @@ export function useChatSettings() {
 
   const copySessionsDir = useCallback(() => {
     if (!paths?.sessionsDir) return
-    try {
-      void writeTextToClipboard(paths.sessionsDir)
-    } catch {
+    writeTextToClipboard(paths.sessionsDir).catch(() => {
       // ignore
-    }
+    })
   }, [paths])
 
   const copyStorePath = useCallback(() => {
     if (!paths?.storePath) return
-    try {
-      void writeTextToClipboard(paths.storePath)
-    } catch {
+    writeTextToClipboard(paths.storePath).catch(() => {
       // ignore
-    }
+    })
   }, [paths])
 
   return {
