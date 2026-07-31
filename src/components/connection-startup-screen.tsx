@@ -212,16 +212,26 @@ export function ConnectionStartupScreen({ onConnected }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto px-6 py-10 text-white"
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto overflow-x-hidden px-6 py-10 text-white"
       style={{
         backgroundColor: '#0A0E1A',
         fontFamily: 'Inter, system-ui, sans-serif',
       }}
     >
-      <div className="flex w-full max-w-lg flex-col items-center text-center">
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-50"
+      >
+        <source src="/valkhana-splash-loop.webm" type="video/webm" />
+        <source src="/valkhana-splash-loop.mp4" type="video/mp4" />
+      </video>
+      <div className="relative z-10 flex w-full max-w-lg flex-col items-center text-center">
         <img
           src="/claude-avatar.webp"
-          alt="Hermes Agent"
+          alt="Valkhana"
           className="mb-5 h-20 w-20 rounded-2xl object-cover shadow-[0_12px_40px_rgba(0,0,0,0.45)]"
         />
 
