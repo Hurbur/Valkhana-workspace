@@ -529,11 +529,19 @@ export function ChatScreen({
   // Idempotency guard prevents duplicate sends on paste/attach double-fire.
   const lastSendKeyRef = useRef('')
   const lastSendAtRef = useRef(0)
-  const activeSendRef = useRef<{
-    sessionKey: string
-    friendlyId: string
-    clientId: string
-  } | null>(null)
+  // FIFO queue, not a single slot: retryable-message flush can fire
+  // sendMessage() multiple times in the same tick with no await between
+  // calls (fire-and-forget by design), so a single overwritten slot let a
+  // later send's activeSendRef assignment clobber an earlier send's still
+  // in-flight tracking before its onStarted/onComplete/onError fired -
+  // misattributing status transitions to the wrong message's clientId.
+  const activeSendRef = useRef<
+    Array<{
+      sessionKey: string
+      friendlyId: string
+      clientId: string
+    }>
+  >([])
   const [fileExplorerCollapsed, setFileExplorerCollapsed] = useState(() => {
     if (typeof window === 'undefined') return true
     const stored = localStorage.getItem('claude-file-explorer-collapsed')
@@ -1138,9 +1146,9 @@ export function ChatScreen({
         sessionKey: string
         friendlyId: string
       }) => {
-        const activeSend = activeSendRef.current
+        const activeSend = activeSendRef.current[0]
         if (activeSend) {
-          activeSendRef.current = {
+          activeSendRef.current[0] = {
             ...activeSend,
             sessionKey,
             friendlyId,
@@ -1158,7 +1166,7 @@ export function ChatScreen({
     ),
     onStarted: useCallback(
       ({ runId }: { runId: string | null }) => {
-        const activeSend = activeSendRef.current
+        const activeSend = activeSendRef.current[0]
         if (!activeSend?.clientId) return
         updateHistoryMessageByClientIdEverywhere(
           queryClient,
@@ -1178,7 +1186,7 @@ export function ChatScreen({
       [queryClient],
     ),
     onComplete: useCallback((message: ChatMessage) => {
-      const activeSend = activeSendRef.current
+      const activeSend = activeSendRef.current[0]
       if (activeSend?.clientId) {
         updateHistoryMessageByClientIdEverywhere(
           queryClient,
@@ -1196,7 +1204,7 @@ export function ChatScreen({
           activeSend.friendlyId,
         )
       }
-      activeSendRef.current = null
+      activeSendRef.current.shift()
       refreshHistoryRef.current()
       setSending(false)
       // Clear waitingForResponse so ThinkingBubble hides and message renders
@@ -1209,7 +1217,7 @@ export function ChatScreen({
     }, [queryClient, streamFinish]),
     onError: useCallback(
       (messageText: string) => {
-        const activeSend = activeSendRef.current
+        const activeSend = activeSendRef.current[0]
         if (activeSend?.clientId && !isMissingAuth(messageText)) {
           updateHistoryMessageByClientIdEverywhere(
             queryClient,
@@ -1220,7 +1228,7 @@ export function ChatScreen({
             }),
           )
         }
-        activeSendRef.current = null
+        activeSendRef.current.shift()
         setSending(false)
         if (isMissingAuth(messageText)) {
           if (!embedded) {
@@ -1269,7 +1277,7 @@ export function ChatScreen({
       [queryClient],
     ),
     onAbort: useCallback(() => {
-      activeSendRef.current = null
+      activeSendRef.current = []
       setSending(false)
       setPendingGeneration(false)
       setWaitingForResponse(false)
@@ -1974,11 +1982,11 @@ export function ChatScreen({
       setError(null)
       clearCompletedStreaming()
       setWaitingForResponse(true)
-      activeSendRef.current = {
+      activeSendRef.current.push({
         sessionKey,
         friendlyId,
         clientId: optimisticClientId,
-      }
+      })
 
       // Failsafe: clear waitingForResponse after 120s no matter what
       // Prevents infinite spinner if SSE/idle detection both fail
@@ -2530,7 +2538,7 @@ export function ChatScreen({
   )
 
   const handleAbortStreaming = useCallback(() => {
-    const activeSend = activeSendRef.current
+    const activeSend = activeSendRef.current[0]
     if (activeSend?.clientId) {
       updateHistoryMessageByClientIdEverywhere(
         queryClient,
@@ -2541,7 +2549,7 @@ export function ChatScreen({
         }),
       )
     }
-    activeSendRef.current = null
+    activeSendRef.current = []
     cancelStreaming()
     setSending(false)
     setPendingGeneration(false)
