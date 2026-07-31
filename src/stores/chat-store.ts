@@ -1241,22 +1241,25 @@ export const useChatStore = create<ChatState>((set, get) => ({
         return true
       }
 
-      if (histMsg.role === rtMsg.role && rtText) {
-        const histText = extractMessageText(histMsg)
-        if (histText === rtText) return true
-        // Streaming realtime text is a prefix of the final server text.
-        // Match either direction to prevent duplicates when the server
-        // returns the complete message after the realtime buffer had a
-        // partial version.
-        if (rtText.length > 0 && histText.length > 0) {
-          if (histText.startsWith(rtText) || rtText.startsWith(histText)) return true
-        }
-      }
-
       const histRaw = histMsg as Record<string, unknown>
       const histIsOptimistic =
         normalizeString(histRaw.status) === 'sending' ||
         normalizeString(histRaw.__optimisticId).length > 0
+
+      if (histMsg.role === rtMsg.role && rtText) {
+        const histText = extractMessageText(histMsg)
+        if (histText === rtText) return true
+        // Streaming realtime text can be a prefix of the final server text
+        // ONLY while histMsg is still an in-flight optimistic placeholder -
+        // gating on histIsOptimistic here (previously ungated, both
+        // directions) matters: two distinct, fully-finalized messages where
+        // one text happens to be a literal prefix of the other (e.g. "no"
+        // then later "no thanks") would otherwise silently merge and the
+        // second, real message would vanish from the transcript.
+        if (histIsOptimistic && rtText.length > 0 && histText.length > 0) {
+          if (rtText.startsWith(histText)) return true
+        }
+      }
 
       if (histIsOptimistic && histMsg.role === rtMsg.role) {
         if (rtText) {

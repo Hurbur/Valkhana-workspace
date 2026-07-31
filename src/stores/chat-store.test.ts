@@ -67,4 +67,36 @@ describe('chat-store history merge ordering', () => {
       'local-3',
     ])
   })
+
+  it('does not drop a distinct realtime message whose text happens to be a superstring of an unrelated finalized history message', () => {
+    // Regression test: matchesRealtimeMessage() used to prefix-match
+    // histText/rtText in either direction regardless of whether histMsg was
+    // still an in-flight optimistic placeholder. Two fully-finalized,
+    // genuinely distinct messages where one text is a literal prefix of the
+    // other (e.g. "no" then later "no thanks") would incorrectly match, and
+    // the second, real message would be silently excluded from the merged
+    // transcript.
+    const sessionKey = 'prefix-collision-session'
+    const historyMessages: Array<ChatMessage> = [
+      textMessage('hist-1', 'user', 'no', 0),
+    ]
+    const realtimeMessage = textMessage('rt-1', 'user', 'no thanks', 1)
+
+    useChatStore.setState((state) => {
+      const realtimeMessages = new Map(state.realtimeMessages)
+      realtimeMessages.set(sessionKey, [realtimeMessage])
+      return { realtimeMessages }
+    })
+
+    const merged = useChatStore
+      .getState()
+      .mergeHistoryMessages(sessionKey, historyMessages)
+
+    const texts = merged.map(
+      (message) => (message.content as Array<{ text?: string }>)[0]?.text,
+    )
+    expect(texts).toContain('no')
+    expect(texts).toContain('no thanks')
+    expect(merged).toHaveLength(2)
+  })
 })
