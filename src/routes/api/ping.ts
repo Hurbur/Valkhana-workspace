@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import {
   CLAUDE_API,
   ensureGatewayProbed,
+  getConnectionStatus,
 } from '../../server/gateway-capabilities'
 import { requireLocalOrAuth } from '../../server/auth-middleware'
 
@@ -28,8 +29,18 @@ export const Route = createFileRoute('/api/ping')({
           )
         }
 
-        const caps = await ensureGatewayProbed()
-        if (!caps.health) {
+        // Checking caps.health alone here used to mean this always
+        // reported unhealthy on a dashboard-backed deployment where the
+        // legacy :8642 REST gateway is intentionally never enabled (see
+        // CLAUDE.md / this project's own history - enabling it was
+        // rejected as unsafe). getConnectionStatus() already models this
+        // correctly elsewhere (system-metrics.ts uses it the same way):
+        // 'partial'/'enhanced'/'connected' all mean the app is genuinely
+        // usable via the dashboard-backed capability, even with the
+        // legacy gateway down. Only a real 'disconnected' - neither the
+        // gateway nor the dashboard reachable - is a true outage.
+        await ensureGatewayProbed()
+        if (getConnectionStatus() === 'disconnected') {
           return Response.json(
             {
               ok: false,

@@ -1660,9 +1660,17 @@ export function ChatScreen({
     staleTime: 30_000,
     refetchInterval: 60_000, // Re-check every 60s to clear stale errors
   })
-  // Don't show errors for new chats or when SSE is connected
+  // Don't show errors for new chats. connectionState here always reads
+  // 'connected' (see use-chat-stream.ts - a dead stub kept only to satisfy
+  // an import, from before Valkhana moved off legacy SSE onto direct API
+  // calls), so this used to be permanently short-circuited and the
+  // statusQuery-derived "Hermes Agent unavailable" error could never show
+  // even during a genuine outage. statusQuery (polling /api/ping, which
+  // itself was just fixed to use getConnectionStatus() instead of the
+  // legacy-gateway-only health flag - see ping.ts) is the one real, live
+  // signal here now.
   const statusError =
-    !isNewChat && connectionState !== 'connected'
+    !isNewChat
       ? statusQuery.error instanceof Error
         ? {
             message: statusQuery.error.message,
@@ -2665,11 +2673,15 @@ export function ChatScreen({
     )
   }, [serverError, serverErrorStatus, handleRefetch, showErrorNotice])
 
+  // Same fix as statusError above: connectionState is a dead stub always
+  // reading 'connected', which made this permanently resolve to 'connected'
+  // regardless of real backend health. Derive purely from the live
+  // statusQuery poll instead (see ping.ts's getConnectionStatus() fix).
   const mobileHeaderStatus: 'connected' | 'connecting' | 'disconnected' =
-    connectionState === 'connected'
-      ? 'connected'
-      : statusQuery.data?.ok === false || statusQuery.isError
-        ? 'disconnected'
+    statusQuery.data?.ok === false || statusQuery.isError
+      ? 'disconnected'
+      : statusQuery.data?.ok === true
+        ? 'connected'
         : 'connecting'
 
   const activeHeaderToolName =
