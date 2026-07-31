@@ -192,6 +192,7 @@ function areSidebarSessionsEqual(
     if (prevSession.titleStatus !== nextSession.titleStatus) return false
     if (prevSession.titleSource !== nextSession.titleSource) return false
     if (prevSession.titleError !== nextSession.titleError) return false
+    if (prevSession.source !== nextSession.source) return false
   }
   return true
 }

@@ -151,13 +151,26 @@ function SessionItemComponent({
       <div className="flex-1 min-w-0 py-1.5">
         <div
           className={cn(
-            'truncate text-sm font-[500]',
+            'flex items-center gap-1.5 truncate text-sm font-[500]',
             isGenerating ? 'text-primary-700' : '',
           )}
         >
-          <span className={cn(isGenerating ? 'animate-pulse' : undefined)}>
+          <span
+            className={cn(
+              'truncate',
+              isGenerating ? 'animate-pulse' : undefined,
+            )}
+          >
             {baseTitle}
           </span>
+          {session.source === 'cli' ? (
+            <span
+              className="shrink-0 rounded border border-primary-300 px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-primary-600"
+              title="Started from the raw CLI"
+            >
+              CLI
+            </span>
+          ) : null}
         </div>
         <div
           className={cn(

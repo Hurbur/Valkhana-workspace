@@ -327,6 +327,10 @@ export function toSessionSummary(
     key: session.id,
     friendlyId: session.id,
     kind: 'chat',
+    // Real per-session origin tag from hermes_state.py (cli/telegram/discord/
+    // tui/web) - previously computed here but never included in the mapped
+    // object, so the sidebar never had it to render a badge from.
+    source: session.source ?? null,
     status: session.ended_at ? 'ended' : 'idle',
     model: session.model || '',
     label: session.title || undefined,

@@ -117,6 +117,8 @@ export type SessionMeta = {
   titleSource?: SessionTitleSource
   titleError?: string | null
   preview?: string | null
+  /** Real per-session origin from hermes_state.py: 'cli' | 'telegram' | 'discord' | 'tui' | 'web' | ... */
+  source?: string | null
 }
 
 export type PathsPayload = {
