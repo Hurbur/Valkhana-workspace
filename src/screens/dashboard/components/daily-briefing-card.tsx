@@ -111,6 +111,12 @@ export function DailyBriefingCard() {
             </span>
             {pendingCron.length} / {cronJobs.length}
           </div>
+          <div>
+            <span style={{ color: 'var(--theme-muted)' }}>
+              Projects registered:{' '}
+            </span>
+            {briefing?.projects?.length ?? 0}
+          </div>
           {briefing?.errors && Object.keys(briefing.errors).length > 0 ? (
             <div
               className="mt-1 text-[9px]"

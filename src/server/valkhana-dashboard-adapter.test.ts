@@ -1,5 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+// fetchValkhanaBriefing now also calls fetchProjectsTree() (projects.tree
+// over the /api/ws gateway) - mocked here rather than building out a full
+// WS-ticket-handshake harness, since these tests are about the REST-based
+// profile/session/cron fields, not the projects RPC path.
+vi.mock('./valkhana-gateway-ws', () => ({
+  fetchProjectsTree: vi.fn().mockResolvedValue([]),
+}))
+
 let fetchValkhanaBriefing: typeof import('./valkhana-dashboard-adapter').fetchValkhanaBriefing
 let fetchValkhanaActiveProfile: typeof import('./valkhana-dashboard-adapter').fetchValkhanaActiveProfile
 let fetchValkhanaSessions: typeof import('./valkhana-dashboard-adapter').fetchValkhanaSessions

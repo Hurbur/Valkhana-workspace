@@ -25,6 +25,8 @@
  * real tradeoff vs. the dedicated-routes fork option — see the handoff doc).
  */
 
+import { fetchProjectsTree, type ValkhanaProject } from './valkhana-gateway-ws'
+
 const DASHBOARD_URL = (
   process.env.HERMES_DASHBOARD_URL || 'http://127.0.0.1:7860'
 ).replace(/\/+$/, '')
@@ -244,6 +246,7 @@ export interface ValkhanaBriefingData {
   activeProfile: ValkhanaProfile | null
   sessionStats: unknown
   cronJobs: Array<ValkhanaCronJob>
+  projects: Array<ValkhanaProject>
   fetchedAt: number
 }
 
@@ -396,11 +399,12 @@ export async function fetchValkhanaBriefing(): Promise<{
   const errors: Record<string, string> = {}
   const data: Partial<ValkhanaBriefingData> = { fetchedAt: Date.now() }
 
-  const [profilesRes, activeRes, statsRes, cronRes] = await Promise.allSettled([
+  const [profilesRes, activeRes, statsRes, cronRes, projectsRes] = await Promise.allSettled([
     valkhanaGet('/api/profiles'),
     valkhanaGet('/api/profiles/active'),
     valkhanaGet('/api/sessions/stats'),
     valkhanaGet('/api/cron/jobs', { profile: 'all' }),
+    fetchProjectsTree(),
   ])
 
   if (profilesRes.status === 'fulfilled') {
@@ -439,6 +443,21 @@ export async function fetchValkhanaBriefing(): Promise<{
       cronRes.reason instanceof Error
         ? cronRes.reason.message
         : String(cronRes.reason)
+  }
+
+  if (projectsRes.status === 'fulfilled') {
+    // Real per-profile registered Projects (hermes_cli/projects_db.py via
+    // the projects.tree RPC) - the build plan's originally-named data
+    // source, never wired in until now. Exclude the always-present
+    // "__no_project__" (Home) bucket from the count so it reflects genuine
+    // user-registered projects, matching Hermes's own "user-registered, not
+    // auto-discovered" Projects model.
+    data.projects = projectsRes.value.filter((project) => !project.isNoProject)
+  } else {
+    errors.projects =
+      projectsRes.reason instanceof Error
+        ? projectsRes.reason.message
+        : String(projectsRes.reason)
   }
 
   return { data, errors }

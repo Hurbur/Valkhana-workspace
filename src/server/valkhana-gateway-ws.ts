@@ -276,3 +276,117 @@ export async function submitPromptAndCollectReply(
 
   return { sessionId: durableSessionId, events, text: text_, truncated: !completed }
 }
+
+/**
+ * Generic one-shot RPC call against the same gateway (/api/ws) used by
+ * submitPromptAndCollectReply above, for methods that return a single
+ * result rather than a streamed turn - e.g. projects.tree. Mints its own
+ * ticket and opens/closes its own short-lived connection, same as the
+ * prompt path, since tickets are single-use and 30s TTL.
+ */
+async function callGatewayRpc<T>(
+  method: string,
+  params: Record<string, unknown>,
+  timeoutMs = 10_000,
+): Promise<T> {
+  const ticket = await mintWsTicket()
+  const ws = new WebSocket(`${DASHBOARD_WS_URL}/api/ws?ticket=${encodeURIComponent(ticket)}`)
+
+  let resolveDone: ((value: T) => void) | null = null
+  let rejectDone: ((err: Error) => void) | null = null
+  const done = new Promise<T>((resolve, reject) => {
+    resolveDone = resolve
+    rejectDone = reject
+  })
+
+  ws.addEventListener('message', (ev) => {
+    let msg: RpcEnvelope
+    try {
+      msg = JSON.parse(String(ev.data)) as RpcEnvelope
+    } catch {
+      return
+    }
+    if (msg.id !== 'rpc-call') return
+    if (msg.error) {
+      rejectDone?.(new ValkhanaGatewayWsError(`${method} failed: ${msg.error.message}`, 502))
+      return
+    }
+    resolveDone?.(msg.result as T)
+  })
+
+  ws.addEventListener('error', () =>
+    rejectDone?.(new ValkhanaGatewayWsError('gateway WebSocket error', 502)),
+  )
+  ws.addEventListener('close', () =>
+    rejectDone?.(new ValkhanaGatewayWsError('gateway WebSocket closed before responding', 502)),
+  )
+
+  await new Promise<void>((resolve) => {
+    ws.addEventListener('open', () => resolve())
+    ws.addEventListener('error', () => resolve())
+    setTimeout(resolve, 5_000)
+  })
+
+  if (ws.readyState !== WebSocket.OPEN) {
+    throw new ValkhanaGatewayWsError('gateway WebSocket failed to open', 502)
+  }
+
+  ws.send(JSON.stringify({ jsonrpc: '2.0', id: 'rpc-call', method, params }))
+
+  try {
+    return await Promise.race([
+      done,
+      new Promise<T>((_, reject) =>
+        setTimeout(
+          () => reject(new ValkhanaGatewayWsError(`${method} timed out`, 504)),
+          timeoutMs,
+        ),
+      ),
+    ])
+  } finally {
+    try {
+      ws.close()
+    } catch {
+      // Best-effort.
+    }
+  }
+}
+
+export type ValkhanaProject = {
+  id: string
+  label: string
+  path: string | null
+  isNoProject: boolean
+  sessionCount: number
+  lastActive: number | null
+}
+
+/**
+ * Real per-profile registered Projects, from hermes_cli/projects_db.py via
+ * the projects.tree RPC method on the same gateway used for chat. This is
+ * the actual data source the original build plan named (previously never
+ * wired in - the briefing card only showed profile/session/cron data).
+ * The "__no_project__" bucket ("Home") always exists and holds sessions
+ * not assigned to a real project - callers deciding what counts as a real
+ * registered project should filter on isNoProject.
+ */
+export async function fetchProjectsTree(): Promise<Array<ValkhanaProject>> {
+  const result = await callGatewayRpc<{
+    projects?: Array<{
+      id: string
+      label: string
+      path: string | null
+      isNoProject?: boolean
+      sessionCount?: number
+      lastActive?: number | null
+    }>
+  }>('projects.tree', {})
+  return (result.projects ?? []).map((project) => ({
+    id: project.id,
+    label: project.label,
+    path: project.path,
+    isNoProject: project.isNoProject ?? false,
+    sessionCount: project.sessionCount ?? 0,
+    lastActive: project.lastActive ?? null,
+  }))
+}
