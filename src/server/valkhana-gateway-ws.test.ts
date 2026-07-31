@@ -33,17 +33,37 @@ class FakeWebSocket {
           data: JSON.stringify({
             jsonrpc: '2.0',
             id: 'create-session',
-            result: { session_id: 'fake-session-1' },
+            result: { session_id: 'fake-session-1', stored_session_id: 'stored-durable-1' },
           }),
         }),
       )
+    } else if (parsed.method === 'session.resume') {
+      queueMicrotask(() => {
+        if (parsed.params.session_id === 'unknown-durable-id') {
+          this.emit('message', {
+            data: JSON.stringify({
+              jsonrpc: '2.0',
+              id: 'resume-session',
+              error: { code: 4007, message: 'session not found' },
+            }),
+          })
+          return
+        }
+        this.emit('message', {
+          data: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 'resume-session',
+            result: { session_id: 'fake-session-2', resumed: parsed.params.session_id },
+          }),
+        })
+      })
     } else if (parsed.method === 'prompt.submit') {
       queueMicrotask(() => {
         this.emit('message', {
           data: JSON.stringify({
             jsonrpc: '2.0',
             method: 'event',
-            params: { type: 'message.start', session_id: 'fake-session-1' },
+            params: { type: 'message.start', session_id: parsed.params.session_id },
           }),
         })
         this.emit('message', {
@@ -52,7 +72,7 @@ class FakeWebSocket {
             method: 'event',
             params: {
               type: 'message.complete',
-              session_id: 'fake-session-1',
+              session_id: parsed.params.session_id,
               payload: { text: 'four' },
             },
           }),
@@ -97,7 +117,7 @@ describe('submitPromptAndCollectReply', () => {
 
     const reply = await submitPromptAndCollectReply('what is 2+2?')
 
-    expect(reply.sessionId).toBe('fake-session-1')
+    expect(reply.sessionId).toBe('stored-durable-1')
     expect(reply.text).toBe('four')
     expect(reply.events.map((e) => e.type)).toEqual(['message.start', 'message.complete'])
   })
@@ -106,5 +126,24 @@ describe('submitPromptAndCollectReply', () => {
     vi.stubGlobal('fetch', mockFetchOnce(401, {}))
 
     await expect(submitPromptAndCollectReply('hello')).rejects.toThrow(ValkhanaGatewayWsError)
+  })
+
+  it('resumes an existing conversation via resumeSessionId instead of creating a fresh session', async () => {
+    vi.stubGlobal('fetch', mockFetchOnce(200, { ticket: 'fake-ticket', ttl_seconds: 30 }))
+
+    const reply = await submitPromptAndCollectReply('continue please', {
+      resumeSessionId: 'stored-durable-1',
+    })
+
+    expect(reply.sessionId).toBe('stored-durable-1')
+    expect(reply.text).toBe('four')
+  })
+
+  it('throws a ValkhanaGatewayWsError when resuming an unknown session', async () => {
+    vi.stubGlobal('fetch', mockFetchOnce(200, { ticket: 'fake-ticket', ttl_seconds: 30 }))
+
+    await expect(
+      submitPromptAndCollectReply('hi', { resumeSessionId: 'unknown-durable-id' }),
+    ).rejects.toThrow(ValkhanaGatewayWsError)
   })
 })

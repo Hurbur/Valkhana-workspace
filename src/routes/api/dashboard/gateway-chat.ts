@@ -13,6 +13,9 @@ import {
  * research question (fork hermes-agent for a chat-completions endpoint):
  * no fork needed, this already exists on the upstream dashboard. See
  * valkhana-gateway-ws.ts for the full protocol writeup.
+ *
+ * Pass `sessionId` (the `sessionId` field from a previous response) in the
+ * request body to continue that conversation instead of starting a new one.
  */
 export const Route = createFileRoute('/api/dashboard/gateway-chat')({
   server: {
@@ -24,9 +27,9 @@ export const Route = createFileRoute('/api/dashboard/gateway-chat')({
         const contentTypeError = requireJsonContentType(request)
         if (contentTypeError) return contentTypeError
 
-        let body: { text?: unknown }
+        let body: { text?: unknown; sessionId?: unknown }
         try {
-          body = (await request.json()) as { text?: unknown }
+          body = (await request.json()) as { text?: unknown; sessionId?: unknown }
         } catch {
           return json({ error: 'invalid JSON' }, { status: 400 })
         }
@@ -37,9 +40,11 @@ export const Route = createFileRoute('/api/dashboard/gateway-chat')({
         if (text.length > 4000) {
           return json({ error: 'text too long' }, { status: 400 })
         }
+        const resumeSessionId =
+          typeof body.sessionId === 'string' && body.sessionId.trim() ? body.sessionId.trim() : undefined
 
         try {
-          const reply = await submitPromptAndCollectReply(text)
+          const reply = await submitPromptAndCollectReply(text, { resumeSessionId })
           return json(reply)
         } catch (error) {
           const message = error instanceof Error ? error.message : 'gateway chat failed'

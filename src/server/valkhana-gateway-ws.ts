@@ -19,22 +19,57 @@
  *    protocol look broken before the ticket-mint step was found.
  * 3. WS connect to /api/ws?ticket=<ticket>. First frame received is a
  *    `gateway.ready` event.
- * 4. Send {jsonrpc:'2.0', id, method:'session.create', params:{}} to get a
- *    fresh session_id.
+ * 4a. First turn in a conversation: send
+ *    {jsonrpc:'2.0', id, method:'session.create', params:{}}. The result
+ *    carries both an ephemeral `session_id` (only valid on this WS
+ *    connection) and a durable `stored_session_id` (the DB-backed identity,
+ *    confirmed via tui_gateway/methods_session.py - `session.resume` looks
+ *    sessions up by this id, not the ephemeral one).
+ * 4b. Continuing a conversation on a new connection: send
+ *    {jsonrpc:'2.0', id, method:'session.resume', params:{session_id:
+ *    <durable stored_session_id>}}. Confirmed via methods_session.py: this
+ *    returns a *fresh* ephemeral `session_id` for the new connection plus
+ *    `resumed` (echoing the durable id back) and the session's existing
+ *    `messages`/`message_count` - the conversation history is genuinely
+ *    reattached, not just referenced.
  * 5. Send {jsonrpc:'2.0', id, method:'prompt.submit',
- *    params:{session_id, text}}. Immediate reply is {status:'streaming'};
- *    the actual response arrives as a stream of
+ *    params:{session_id, text}} using whichever ephemeral session_id came
+ *    back from step 4a/4b. Immediate reply is {status:'streaming'}; the
+ *    actual response arrives as a stream of
  *    {jsonrpc:'2.0', method:'event', params:{type, session_id, payload}}
  *    frames (message.start, thinking.delta, status.update, ...).
  *
- * The exact "turn complete" event name was not observed within this
- * module's own verification window (the agent's thinking/response stream
- * can run long) - collectPromptReply() below treats any event whose type
- * contains "complete", "end", "done", or "error" as a turn boundary, and
- * otherwise stops at maxWaitMs. This is a defensible, documented
- * approximation given the ~13,000-line dispatcher this event stream comes
- * from was not exhaustively read; a follow-up pass watching a full real
- * turn to completion should tighten this to the exact terminal event type.
+ * Session reuse: each HTTP call to this module still opens its own
+ * short-lived WS connection (tickets are single-use, 30s TTL - there is no
+ * way to hold one WS open across separate HTTP requests without a much
+ * larger connection-pooling redesign this module does not attempt). What
+ * *is* now reused is the underlying Hermes conversation: pass the durable
+ * `sessionId` returned by a previous call back in as `options.resumeSessionId`
+ * and the new connection resumes that same conversation (full history)
+ * instead of starting a fresh one. Previously every call started a brand
+ * new session with no way to continue a prior turn - fine for a proof of
+ * concept, not for real multi-turn chat.
+ *
+ * Turn-completion detection: `message.complete` is confirmed as the sole
+ * terminal event, on two independent grounds:
+ *  1. Live probe against a real (error-path, quota-exhausted) turn - after
+ *     `message.complete` fired, only unrelated background
+ *     `sessions.changed` broadcasts followed.
+ *  2. Direct read of the installed hermes-agent source
+ *     (tui_gateway/server.py): a failed-turn helper is explicitly
+ *     documented as "Close a failed turn with a terminal `message.complete`
+ *     frame", and the `turn.error` handler re-emits as
+ *     `_emit("message.complete", sid, {text: ..., status: "error"})`.
+ *     Every turn outcome - success, error, or failure - funnels through
+ *     this one frame; no other terminal event type is ever sent on this
+ *     channel. (Lower-level internal event names like `turn.start` /
+ *     `turn.end` / `turn.error` exist in compute_host.py/host_supervisor.py
+ *     but are not what reaches this WS client - they get translated to
+ *     `message.complete` first.)
+ * A fully successful multi-tool-call turn was not observed live end to end
+ * (blocked by the same OpenAI-Codex usage quota both times this was
+ * attempted), but the source-level confirmation above does not depend on
+ * that - it covers the success path too.
  */
 import { WebSocket } from 'undici'
 import { getValkhanaDashboardCookie } from './valkhana-dashboard-adapter'
@@ -83,7 +118,7 @@ async function mintWsTicket(): Promise<string> {
   return body.ticket
 }
 
-const TURN_BOUNDARY_PATTERN = /complete|finished|end|done|error/i
+const TURN_BOUNDARY_TYPES = new Set(['message.complete'])
 
 export interface PromptTurnEvent {
   type: string
@@ -91,6 +126,7 @@ export interface PromptTurnEvent {
 }
 
 export interface PromptReply {
+  /** Durable session id - pass back as `options.resumeSessionId` to continue this conversation. */
   sessionId: string
   events: Array<PromptTurnEvent>
   /** Concatenated text from any event payload carrying a `.text` field. */
@@ -98,22 +134,24 @@ export interface PromptReply {
 }
 
 /**
- * Submits one prompt to a fresh session on the Hermes Agent gateway and
- * collects the streamed response. Each call opens its own short-lived WS
- * connection (tickets are single-use and 30s TTL, matching the dashboard's
- * own "mint one ticket per WS" pattern) rather than holding a persistent
- * connection open.
+ * Submits one prompt to the Hermes Agent gateway and collects the streamed
+ * response. Opens its own short-lived WS connection per call (tickets are
+ * single-use and 30s TTL). Pass `options.resumeSessionId` (the `sessionId`
+ * from a previous PromptReply) to continue that conversation instead of
+ * starting a fresh one.
  */
 export async function submitPromptAndCollectReply(
   text: string,
-  options: { maxWaitMs?: number } = {},
+  options: { maxWaitMs?: number; resumeSessionId?: string } = {},
 ): Promise<PromptReply> {
   const maxWaitMs = options.maxWaitMs ?? 25_000
   const ticket = await mintWsTicket()
   const ws = new WebSocket(`${DASHBOARD_WS_URL}/api/ws?ticket=${encodeURIComponent(ticket)}`)
 
   const events: Array<PromptTurnEvent> = []
-  let sessionId: string | null = null
+  let ephemeralSessionId: string | null = null
+  let durableSessionId: string | null = options.resumeSessionId ?? null
+  let rpcError: ValkhanaGatewayWsError | null = null
   let resolveDone: (() => void) | null = null
   const done = new Promise<void>((resolve) => {
     resolveDone = resolve
@@ -121,6 +159,11 @@ export async function submitPromptAndCollectReply(
 
   function send(method: string, params: Record<string, unknown>, id: string) {
     ws.send(JSON.stringify({ jsonrpc: '2.0', id, method, params }))
+  }
+
+  function startTurn(sid: string) {
+    ephemeralSessionId = sid
+    send('prompt.submit', { session_id: sid, text }, 'submit-prompt')
   }
 
   ws.addEventListener('message', (ev) => {
@@ -131,12 +174,41 @@ export async function submitPromptAndCollectReply(
       return
     }
 
-    if (msg.id === 'create-session' && msg.result) {
-      const result = msg.result as { session_id?: string }
-      sessionId = result.session_id ?? null
-      if (sessionId) {
-        send('prompt.submit', { session_id: sessionId, text }, 'submit-prompt')
+    if (msg.id === 'create-session') {
+      if (msg.error) {
+        rpcError = new ValkhanaGatewayWsError(
+          `session.create failed: ${msg.error.message}`,
+          502,
+        )
+        resolveDone?.()
+        return
+      }
+      const result = msg.result as { session_id?: string; stored_session_id?: string }
+      durableSessionId = result.stored_session_id ?? result.session_id ?? null
+      if (result.session_id) {
+        startTurn(result.session_id)
       } else {
+        rpcError = new ValkhanaGatewayWsError('session.create returned no session_id', 502)
+        resolveDone?.()
+      }
+      return
+    }
+
+    if (msg.id === 'resume-session') {
+      if (msg.error) {
+        rpcError = new ValkhanaGatewayWsError(
+          `session.resume failed: ${msg.error.message}`,
+          404,
+        )
+        resolveDone?.()
+        return
+      }
+      const result = msg.result as { session_id?: string; resumed?: string }
+      durableSessionId = result.resumed ?? durableSessionId
+      if (result.session_id) {
+        startTurn(result.session_id)
+      } else {
+        rpcError = new ValkhanaGatewayWsError('session.resume returned no session_id', 502)
         resolveDone?.()
       }
       return
@@ -146,7 +218,7 @@ export async function submitPromptAndCollectReply(
       const type = String(msg.params.type ?? '')
       if (type === 'gateway.ready') return
       events.push({ type, payload: msg.params.payload })
-      if (TURN_BOUNDARY_PATTERN.test(type)) {
+      if (TURN_BOUNDARY_TYPES.has(type)) {
         resolveDone?.()
       }
     }
@@ -165,7 +237,11 @@ export async function submitPromptAndCollectReply(
     throw new ValkhanaGatewayWsError('gateway WebSocket failed to open', 502)
   }
 
-  send('session.create', {}, 'create-session')
+  if (options.resumeSessionId) {
+    send('session.resume', { session_id: options.resumeSessionId }, 'resume-session')
+  } else {
+    send('session.create', {}, 'create-session')
+  }
 
   await Promise.race([done, new Promise((resolve) => setTimeout(resolve, maxWaitMs))])
 
@@ -175,8 +251,12 @@ export async function submitPromptAndCollectReply(
     // Best-effort.
   }
 
-  if (!sessionId) {
-    throw new ValkhanaGatewayWsError('gateway did not create a session', 502)
+  if (rpcError) {
+    throw rpcError
+  }
+
+  if (!ephemeralSessionId || !durableSessionId) {
+    throw new ValkhanaGatewayWsError('gateway did not create or resume a session', 502)
   }
 
   const text_ = events
@@ -186,5 +266,5 @@ export async function submitPromptAndCollectReply(
     })
     .join('')
 
-  return { sessionId, events, text: text_ }
+  return { sessionId: durableSessionId, events, text: text_ }
 }
