@@ -28,6 +28,7 @@ import {
   CLAUDE_DASHBOARD_URL,
   fetchDashboardToken,
 } from './gateway-capabilities'
+import { getValkhanaDashboardCookie, invalidateValkhanaDashboardCookie } from './valkhana-dashboard-adapter'
 
 const PROXY_TIMEOUT_MS = 10_000
 
@@ -54,12 +55,17 @@ export type DashboardKanbanBoardResponse = {
 }
 
 /**
- * Build headers for dashboard kanban API calls. The plugin route is
- * unauthenticated by design (loopback only), but we still pass the
- * dashboard session token if we have one — some setups proxy the
- * dashboard behind auth that requires it.
+ * Build headers for dashboard kanban API calls. On a standard loopback
+ * install the plugin route is unauthenticated by design, so the bearer
+ * token below is best-effort. This deployment runs the dashboard in
+ * "gated" mode (real auth configured), where the route actually does
+ * require a session - confirmed via a live 401 "no_cookie" error from
+ * /api/plugins/kanban/board. Same root cause and same fix as the
+ * Daily Briefing card and the chat sidebar's session list before it:
+ * attach the real dashboard session cookie via the cookie-forwarding
+ * login adapter (valkhana-dashboard-adapter.ts), not a bearer token.
  */
-async function buildHeaders(): Promise<Record<string, string>> {
+async function buildHeaders(forceRefresh = false): Promise<Record<string, string>> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   }
@@ -69,6 +75,14 @@ async function buildHeaders(): Promise<Record<string, string>> {
   } catch {
     // Token fetch is best-effort. The plugin route works without it
     // on standard loopback installs.
+  }
+  try {
+    if (forceRefresh) invalidateValkhanaDashboardCookie()
+    const cookie = await getValkhanaDashboardCookie()
+    if (cookie) headers.Cookie = cookie
+  } catch {
+    // No dashboard credentials configured, or login failed - proceed
+    // without a cookie; the caller retries once on 401 below.
   }
   return headers
 }
@@ -87,12 +101,19 @@ async function dashboardFetch<T>(
   init: RequestInit = {},
   params: Record<string, string | undefined> = {},
 ): Promise<T> {
-  const headers = await buildHeaders()
-  const res = await fetch(dashboardUrl(path, params), {
-    ...init,
-    headers: { ...headers, ...(init.headers || {}) },
-    signal: AbortSignal.timeout(PROXY_TIMEOUT_MS),
-  })
+  const attempt = async (forceRefresh: boolean) => {
+    const headers = await buildHeaders(forceRefresh)
+    return fetch(dashboardUrl(path, params), {
+      ...init,
+      headers: { ...headers, ...(init.headers || {}) },
+      signal: AbortSignal.timeout(PROXY_TIMEOUT_MS),
+    })
+  }
+
+  let res = await attempt(false)
+  if (res.status === 401) {
+    res = await attempt(true)
+  }
   if (!res.ok) {
     const body = await res.text().catch(() => '')
     throw new Error(
