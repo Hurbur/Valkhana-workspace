@@ -131,6 +131,12 @@ export interface PromptReply {
   events: Array<PromptTurnEvent>
   /** Concatenated text from any event payload carrying a `.text` field. */
   text: string
+  /**
+   * True if `maxWaitMs` elapsed before a `message.complete` event arrived -
+   * `events`/`text` are whatever streamed in so far, not the finished turn.
+   * Previously this case was indistinguishable from a real completion.
+   */
+  truncated: boolean
 }
 
 /**
@@ -152,6 +158,7 @@ export async function submitPromptAndCollectReply(
   let ephemeralSessionId: string | null = null
   let durableSessionId: string | null = options.resumeSessionId ?? null
   let rpcError: ValkhanaGatewayWsError | null = null
+  let completed = false
   let resolveDone: (() => void) | null = null
   const done = new Promise<void>((resolve) => {
     resolveDone = resolve
@@ -219,6 +226,7 @@ export async function submitPromptAndCollectReply(
       if (type === 'gateway.ready') return
       events.push({ type, payload: msg.params.payload })
       if (TURN_BOUNDARY_TYPES.has(type)) {
+        completed = true
         resolveDone?.()
       }
     }
@@ -266,5 +274,5 @@ export async function submitPromptAndCollectReply(
     })
     .join('')
 
-  return { sessionId: durableSessionId, events, text: text_ }
+  return { sessionId: durableSessionId, events, text: text_, truncated: !completed }
 }

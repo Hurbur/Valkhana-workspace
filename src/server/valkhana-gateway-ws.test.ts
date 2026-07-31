@@ -66,6 +66,10 @@ class FakeWebSocket {
             params: { type: 'message.start', session_id: parsed.params.session_id },
           }),
         })
+        // A prompt of this exact text simulates a turn that never reaches
+        // message.complete within the caller's maxWaitMs - used to test the
+        // truncated-reply path instead of always completing normally.
+        if (parsed.params.text === 'STALL_FOREVER') return
         this.emit('message', {
           data: JSON.stringify({
             jsonrpc: '2.0',
@@ -120,6 +124,7 @@ describe('submitPromptAndCollectReply', () => {
     expect(reply.sessionId).toBe('stored-durable-1')
     expect(reply.text).toBe('four')
     expect(reply.events.map((e) => e.type)).toEqual(['message.start', 'message.complete'])
+    expect(reply.truncated).toBe(false)
   })
 
   it('throws a ValkhanaGatewayWsError when ticket minting fails', async () => {
@@ -145,5 +150,14 @@ describe('submitPromptAndCollectReply', () => {
     await expect(
       submitPromptAndCollectReply('hi', { resumeSessionId: 'unknown-durable-id' }),
     ).rejects.toThrow(ValkhanaGatewayWsError)
+  })
+
+  it('marks the reply truncated when maxWaitMs elapses before message.complete arrives', async () => {
+    vi.stubGlobal('fetch', mockFetchOnce(200, { ticket: 'fake-ticket', ttl_seconds: 30 }))
+
+    const reply = await submitPromptAndCollectReply('STALL_FOREVER', { maxWaitMs: 30 })
+
+    expect(reply.truncated).toBe(true)
+    expect(reply.events.map((e) => e.type)).toEqual(['message.start'])
   })
 })

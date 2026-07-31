@@ -676,9 +676,13 @@ async function probeKanban(dashboardAvailable: boolean): Promise<boolean> {
       signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
     })
     if (res.status === 404 || res.status === 405) return false
-    // The plugin route is unauthenticated by design (loopback-only), so
-    // 200 is the normal success. Some auth setups may return 401 — still
-    // means the route exists.
+    // On a standard loopback-only install this route is unauthenticated by
+    // design, so 200 is the normal success there. This deployment runs the
+    // dashboard in gated mode (real auth configured) - dashboardFetch()
+    // already attaches the session cookie above, so 200 is still the normal
+    // outcome; a 401 here would mean that cookie attach failed, not that
+    // auth doesn't apply. Either way the route existing (vs 404/405) is what
+    // this probe cares about, so both statuses return true.
     return true
   } catch {
     return false

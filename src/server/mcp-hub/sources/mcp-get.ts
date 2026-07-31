@@ -1,7 +1,9 @@
 /**
  * mcp-get registry source adapter (Phase 3.0 MVP).
  *
- * Fetches https://registry.mcp.run/v1/manifests with conditional-GET support:
+ * Fetches https://registry.smithery.ai/servers (see REGISTRY_URL below -
+ * the original registry.mcp.run URL was speculative and never resolved)
+ * with conditional-GET support:
  *   - If-None-Match (ETag)
  *   - If-Modified-Since
  *
