@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
+import { isLocalRequest } from '../../server/auth-middleware'
 
 function workerBaseUrl() {
   const explicit = (process.env.PLAYGROUND_ADMIN_BASE_URL || '').trim()
@@ -13,9 +14,13 @@ export const Route = createFileRoute('/api/playground-admin')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const host = (request.headers.get('host') || '').toLowerCase()
-        const localOk = host.startsWith('127.0.0.1:') || host.startsWith('localhost:') || host.endsWith('.local:3002')
-        if (!localOk) {
+        // Verified peer address, not the client-controlled Host header — a
+        // Host check here was trivially spoofable (`curl -H "Host:
+        // localhost:3002"`) and would have forwarded PLAYGROUND_ADMIN_TOKEN
+        // to any remote caller. Same bug class as the earlier
+        // valkhana-tailnet Host-header issue; see auth-middleware.ts's
+        // isLocalRequest for the verified-IP check.
+        if (!isLocalRequest(request)) {
           return json({ ok: false, error: 'Admin stats are only available from a local workspace session.' }, { status: 403 })
         }
 

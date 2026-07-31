@@ -20,6 +20,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
 import { getStateDir } from './workspace-state-dir'
+import {
+  getValkhanaDashboardCookie,
+  invalidateValkhanaDashboardCookie,
+} from './valkhana-dashboard-adapter'
 
 type WorkspaceOverrides = {
   claudeApiUrl?: string
@@ -349,7 +353,7 @@ export async function dashboardFetch(
 ): Promise<Response> {
   const requestPath = withDashboardBase(path)
   const method = (init.method || 'GET').toUpperCase()
-  const doFetch = async (forceToken = false) => {
+  const doFetch = async (forceRefresh = false) => {
     const headers = new Headers(init.headers)
     const isProtected =
       requestPath.includes('/api/') &&
@@ -362,9 +366,31 @@ export async function dashboardFetch(
       !requestPath.endsWith('/api/dashboard/plugins/rescan')
 
     if (isProtected && !headers.has('Authorization')) {
-      const auth = await dashboardAuthHeaders({ force: forceToken })
+      const auth = await dashboardAuthHeaders({ force: forceRefresh })
       for (const [key, value] of Object.entries(auth)) {
         headers.set(key, value)
+      }
+    }
+
+    // Fixed 2026-07-30: dashboardAuthHeaders() scrapes an ephemeral session
+    // token from the dashboard's own root HTML, fetched WITHOUT a cookie -
+    // but that page requires an authenticated session to render (an
+    // anonymous request gets a 302 to /login), so the token was never
+    // actually present in the page it fetched. Interactive dashboard routes
+    // (sessions, profiles, cron) only ever accepted cookie auth in the first
+    // place. Attach a real cookie via the same login flow the Daily
+    // Briefing / Session Organizer cards already use successfully, when
+    // dashboard credentials are configured. Degrades gracefully (no cookie
+    // attached) if they are not, matching this function's existing
+    // best-effort auth posture.
+    if (isProtected && !headers.has('Cookie')) {
+      if (forceRefresh) invalidateValkhanaDashboardCookie()
+      try {
+        const cookie = await getValkhanaDashboardCookie()
+        if (cookie) headers.set('Cookie', cookie)
+      } catch {
+        // No dashboard credentials configured, or login failed - proceed
+        // without a cookie; the caller already handles 401 via retry/safeJson.
       }
     }
 

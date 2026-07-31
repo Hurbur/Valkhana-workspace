@@ -2,6 +2,7 @@
  * Simple in-memory rate limiter (no external deps).
  * Uses a sliding window approach per key.
  */
+import { getRequestIP } from '@tanstack/react-start/server'
 
 const store = new Map<string, { timestamps: Array<number> }>()
 
@@ -62,9 +63,20 @@ export function getClientIp(request: Request): string {
     const real = request.headers.get('x-real-ip')?.trim()
     if (real) return real
   }
-  const maybeAddress = (request as unknown as { remoteAddress?: string })
-    .remoteAddress
-  return (maybeAddress && maybeAddress.trim()) || 'local'
+  // Fixed 2026-07-30: same root cause as auth-middleware.ts's getRequestIp -
+  // a bare Fetch Request never carries a socket address, so reading
+  // .remoteAddress always fell back to the 'local' bucket regardless of the
+  // real caller, silently disabling per-IP rate limiting for every distinct
+  // remote client. Use the request-scoped H3 event's real peer address
+  // instead; fall back to 'local' only outside a live request context
+  // (unit tests), matching prior behavior there exactly.
+  try {
+    const ip = getRequestIP({ xForwardedFor: trustProxy })
+    if (ip && ip.trim()) return ip.trim()
+  } catch {
+    // No active H3 event - fall through to the safe default.
+  }
+  return 'local'
 }
 
 /**

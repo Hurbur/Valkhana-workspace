@@ -16,7 +16,8 @@
  */
 import { getCache, setCache, touchCache } from '../cache'
 import { normalizeTemplate } from '../trust'
-import { assertNotPrivate } from '../lib/ssrf-guard'
+import { Agent } from 'undici'
+import { resolvePinnedAddress } from '../lib/ssrf-guard'
 import type { HubMcpEntry, HubTrust } from '../types'
 
 export interface GenericJsonResult {
@@ -203,9 +204,22 @@ export async function fetchGenericJson(
   const cached = getCache(cacheKey)
   const warnings: string[] = []
 
-  // HIGH-1: SSRF guard — validate hostname resolves to a public address.
+  // HIGH-1: SSRF guard — validate hostname resolves to a public address,
+  // and PIN the real fetch below to that exact validated address (not a
+  // second, independent DNS resolution) to close a DNS-rebinding gap: an
+  // attacker controlling DNS for the target hostname could otherwise answer
+  // this validation lookup with a public IP and the fetch()'s own lookup
+  // with a private one.
+  let pinnedDispatcher: Agent | undefined
   try {
-    await assertNotPrivate(url)
+    const pinned = await resolvePinnedAddress(url)
+    pinnedDispatcher = new Agent({
+      connect: {
+        lookup: (_hostname, _opts, callback) => {
+          callback(null, [{ address: pinned.address, family: pinned.family }])
+        },
+      },
+    })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     warnings.push(`${sourceId}: ${msg}`)
@@ -225,7 +239,13 @@ export async function fetchGenericJson(
   let response: Response
   try {
     // HIGH-1: disable redirects to prevent redirect-based SSRF bypass.
-    response = await fetch(url, { headers, signal, redirect: 'error' })
+    // dispatcher pins this exact request to the address validated above.
+    response = await fetch(url, {
+      headers,
+      signal,
+      redirect: 'error',
+      ...(pinnedDispatcher ? { dispatcher: pinnedDispatcher } : {}),
+    } as RequestInit)
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     warnings.push(`${sourceId}: network error: ${msg}`)
@@ -233,6 +253,8 @@ export async function fetchGenericJson(
       return { entries: cached.payload as HubMcpEntry[], warnings, degraded: true }
     }
     return { entries: [], warnings, degraded: true }
+  } finally {
+    void pinnedDispatcher?.close()
   }
 
   // 304 Not Modified

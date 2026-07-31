@@ -22,6 +22,7 @@ import { getOnlineStatus, useCrewStatus } from '@/hooks/use-crew-status'
 import { toast } from '@/components/ui/toast'
 import { OperationalWorkerCard } from './operational-worker-card'
 import { Swarm2OrchestratorCard } from './swarm2-orchestrator-card'
+import { Swarm2RadialView } from './swarm2-radial-view'
 import { Swarm2Wires } from './swarm2-wires'
 import { Swarm2ActivityFeed } from './swarm2-activity-feed'
 import { Swarm2KanbanBoard } from './swarm2-kanban-board'
@@ -229,7 +230,7 @@ type SwarmMissionsResponse = {
   missions?: Array<SwarmMissionSummary>
 }
 
-type ViewMode = 'cards' | 'kanban' | 'runtime' | 'reports'
+type ViewMode = 'cards' | 'radial' | 'kanban' | 'runtime' | 'reports'
 
 type RolePreset = {
   role: string
@@ -727,7 +728,8 @@ function ControlPlaneStage({
   onScrollTmuxSession,
 }: ControlPlaneStageProps) {
   const stageRef = useRef<HTMLDivElement | null>(null)
-  const anchorRef = useRef<HTMLDivElement | null>(null)
+  const cardAnchorRef = useRef<HTMLDivElement | null>(null)
+  const radialHubRef = useRef<HTMLDivElement | null>(null)
   const workerRefsMap = useRef<Map<string, HTMLElement>>(new Map())
   const cardSetters = useRef<
     Map<string, (node: HTMLElement | null) => void>
@@ -737,11 +739,28 @@ function ControlPlaneStage({
     setRefsVersion((value) => value + 1)
   }, [])
 
-  const setAnchor = useCallback((node: HTMLDivElement | null) => {
-    if (anchorRef.current === node) return
-    anchorRef.current = node
+  const setCardAnchor = useCallback((node: HTMLDivElement | null) => {
+    if (cardAnchorRef.current === node) return
+    cardAnchorRef.current = node
     bumpRefsVersion()
   }, [bumpRefsVersion])
+
+  const setRadialHub = useCallback((node: HTMLDivElement | null) => {
+    if (radialHubRef.current === node) return
+    radialHubRef.current = node
+    bumpRefsVersion()
+  }, [bumpRefsVersion])
+
+  const activeAnchorRef = useMemo(
+    () => ({
+      get current() {
+        return viewMode === 'radial'
+          ? radialHubRef.current
+          : cardAnchorRef.current
+      },
+    }),
+    [viewMode],
+  )
 
   const setWorkerRef = useCallback(
     (workerId: string) => {
@@ -793,7 +812,7 @@ function ControlPlaneStage({
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,var(--theme-accent-soft),transparent_42%)]" />
       <Swarm2Wires
         containerRef={stageRef}
-        anchorRef={anchorRef}
+        anchorRef={activeAnchorRef}
         workerRefs={workerRefsMap.current}
         workers={wireTargets}
         version={refsVersion}
@@ -821,11 +840,12 @@ function ControlPlaneStage({
           onRouterResults={() => {
             void onRouterResults()
           }}
-          onAnchorRef={setAnchor}
+          onAnchorRef={setCardAnchor}
           className="w-full max-w-5xl"
         />
         <div className="relative w-full pt-3">
-          <div className={cn('relative z-10', viewMode === 'cards' ? 'block' : 'hidden')}>
+          {viewMode === 'cards' ? (
+          <div className="relative z-10">
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 min-[1680px]:grid-cols-3">
               {members.length === 0 ? (
                 <div className="col-span-full rounded-[1.5rem] border border-dashed border-[var(--theme-border)] bg-[var(--theme-card)] p-8 text-sm text-[var(--theme-muted)]">
@@ -859,6 +879,22 @@ function ControlPlaneStage({
               )}
             </div>
           </div>
+          ) : null}
+
+          {viewMode === 'radial' ? (
+            <Swarm2RadialView
+              members={members}
+              runtimeByWorker={runtimeByWorker}
+              roomIds={roomIds}
+              selectedId={selectedId}
+              onSelect={onSelect}
+              onToggleRoom={onToggleRoom}
+              onOpenTui={onOpenTui}
+              onOpenTasks={onOpenTasks}
+              onWorkerRef={setWorkerRef}
+              onHubRef={setRadialHub}
+            />
+          ) : null}
 
           <div className={cn('relative z-10 flex flex-col gap-3', viewMode === 'runtime' ? 'block' : 'hidden')}>
             {!tmuxAvailable ? (

@@ -4,7 +4,24 @@ import {
   isAuthenticated,
   isPasswordProtectionEnabled,
 } from '../../server/auth-middleware'
-import { ensureGatewayProbed } from '../../server/gateway-capabilities'
+import {
+  CLAUDE_DASHBOARD_URL,
+  ensureGatewayProbed,
+} from '../../server/gateway-capabilities'
+
+const DASHBOARD_HEALTH_TIMEOUT_MS = 3_000
+
+async function isDashboardReachable(): Promise<boolean> {
+  try {
+    const response = await fetch(`${CLAUDE_DASHBOARD_URL}/api/health`, {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(DASHBOARD_HEALTH_TIMEOUT_MS),
+    })
+    return response.ok
+  } catch {
+    return false
+  }
+}
 
 export const Route = createFileRoute('/api/auth-check')({
   server: {
@@ -17,7 +34,9 @@ export const Route = createFileRoute('/api/auth-check')({
           // isBackendReachable() that only tried port 8642 and never
           // benefited from the gateway-capabilities auto-detection logic.
           const caps = await ensureGatewayProbed()
-          const reachable = caps.health || caps.chatCompletions || caps.models
+          const dashboardReachable = await isDashboardReachable()
+          const reachable =
+            caps.health || caps.chatCompletions || caps.models || dashboardReachable
 
           if (!reachable) {
             return json(
