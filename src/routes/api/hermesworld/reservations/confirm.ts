@@ -4,12 +4,22 @@ import {
   createSupabaseReservationStore,
   ReservationValidationError,
 } from '@/server/name-reservations'
-import { safeErrorMessage } from '@/server/rate-limit'
+import {
+  getClientIp,
+  rateLimit,
+  rateLimitResponse,
+  safeErrorMessage,
+} from '@/server/rate-limit'
 
 export const Route = createFileRoute('/api/hermesworld/reservations/confirm')({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const ip = getClientIp(request)
+        if (!rateLimit(`reserve-confirm:${ip}`, 20, 10 * 60 * 1000)) {
+          return rateLimitResponse()
+        }
+
         try {
           const { token } = (await request.json()) as { token?: string }
           const store = createSupabaseReservationStore()

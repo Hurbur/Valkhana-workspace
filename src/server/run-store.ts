@@ -1,4 +1,4 @@
-import { mkdir, readFile, readdir, rename, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, rename, unlink, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import { getHermesRoot } from './claude-paths'
@@ -250,10 +250,54 @@ export async function getActiveRunForSession(
   }
 }
 
+// Completed/errored runs are kept on disk for this long (so a just-finished
+// run is still inspectable), then pruned. Without this, run files accumulate
+// forever and every listAllActiveRuns()/getActiveRunForSession() call re-reads
+// the entire all-time history before filtering it back out in memory.
+const RUN_RETENTION_MS = 24 * 60 * 60 * 1000
+let lastPruneAt = 0
+const PRUNE_INTERVAL_MS = 60 * 60 * 1000
+
+async function pruneStaleRuns(): Promise<void> {
+  const now = Date.now()
+  if (now - lastPruneAt < PRUNE_INTERVAL_MS) return
+  lastPruneAt = now
+  try {
+    const entries = await readdir(RUNS_ROOT, { withFileTypes: true })
+    const sessionDirs = entries
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => path.join(RUNS_ROOT, entry.name))
+    await Promise.all(
+      sessionDirs.map(async (dir) => {
+        const files = (await readdir(dir)).filter((name) => name.endsWith('.json'))
+        await Promise.all(
+          files.map(async (name) => {
+            try {
+              const raw = await readFile(path.join(dir, name), 'utf8')
+              const run = JSON.parse(raw) as PersistedRunState
+              if (
+                ['complete', 'error'].includes(run.status) &&
+                now - run.updatedAt > RUN_RETENTION_MS
+              ) {
+                await unlink(path.join(dir, name))
+              }
+            } catch {
+              // best-effort; a file that fails to read/parse/delete is left for next pass
+            }
+          }),
+        )
+      }),
+    )
+  } catch {
+    // RUNS_ROOT may not exist yet on a fresh install; nothing to prune
+  }
+}
+
 // Lists every non-complete/error run across all sessions, regardless of
 // staleness. Powers the "Background runs" panel so users can inspect and
 // abandon orphans that the staleness filter hides from the chat UI.
 export async function listAllActiveRuns(): Promise<Array<PersistedRunState>> {
+  void pruneStaleRuns()
   try {
     const entries = await readdir(RUNS_ROOT, { withFileTypes: true })
     const sessionDirs = entries

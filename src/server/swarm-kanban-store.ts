@@ -62,21 +62,40 @@ function ensureKanbanFile(): void {
   }
 }
 
-function readKanbanFile(): SwarmKanbanFile {
+// Every read used to re-parse the file from disk and every write did a full
+// synchronous rewrite, per call. Mirrors local-session-store.ts's pattern
+// instead: load once into memory, serve reads from memory (so read-after-
+// write within this process stays correct), and debounce the disk flush.
+// Safe because this is a single Node process (systemd service) with no
+// other writer to the file.
+let cache: SwarmKanbanFile | null = null
+
+function loadKanbanFile(): SwarmKanbanFile {
+  if (cache) return cache
   ensureKanbanFile()
   try {
     const raw = fs.readFileSync(SWARM_KANBAN_FILE, 'utf-8').trim()
-    if (!raw) return { cards: [] }
-    const parsed = JSON.parse(raw) as Partial<SwarmKanbanFile>
-    return { cards: Array.isArray(parsed.cards) ? parsed.cards.map(normalizeCard) : [] }
+    const parsed = raw ? (JSON.parse(raw) as Partial<SwarmKanbanFile>) : {}
+    cache = { cards: Array.isArray(parsed.cards) ? parsed.cards.map(normalizeCard) : [] }
   } catch {
-    return { cards: [] }
+    cache = { cards: [] }
   }
+  return cache
 }
 
-function writeKanbanFile(data: SwarmKanbanFile): void {
+function writeKanbanFileNow(): void {
+  if (!cache) return
   ensureKanbanFile()
-  fs.writeFileSync(SWARM_KANBAN_FILE, JSON.stringify({ cards: data.cards.map(normalizeCard) }, null, 2) + '\n', 'utf-8')
+  fs.writeFileSync(SWARM_KANBAN_FILE, JSON.stringify({ cards: cache.cards }, null, 2) + '\n', 'utf-8')
+}
+
+let saveTimer: ReturnType<typeof setTimeout> | null = null
+function scheduleKanbanSave(): void {
+  if (saveTimer) return
+  saveTimer = setTimeout(() => {
+    saveTimer = null
+    writeKanbanFileNow()
+  }, 2000)
 }
 
 function normalizeStatus(value: unknown): SwarmKanbanLane {
@@ -124,7 +143,7 @@ function normalizeCard(card: (Partial<Omit<SwarmKanbanCard, 'status'>> & { id?: 
 }
 
 export function listSwarmKanbanCards(filters: ListFilters = {}): Array<SwarmKanbanCard> {
-  let cards = readKanbanFile().cards
+  let cards = loadKanbanFile().cards
   if (filters.status) cards = cards.filter((card) => card.status === normalizeStatus(filters.status))
   if (filters.assignedWorker) cards = cards.filter((card) => card.assignedWorker === filters.assignedWorker)
   if (filters.reviewer) cards = cards.filter((card) => card.reviewer === filters.reviewer)
@@ -133,7 +152,7 @@ export function listSwarmKanbanCards(filters: ListFilters = {}): Array<SwarmKanb
 }
 
 export function createSwarmKanbanCard(input: CreateSwarmKanbanCardInput): SwarmKanbanCard {
-  const file = readKanbanFile()
+  const file = loadKanbanFile()
   const now = Date.now()
   const card = normalizeCard({
     id: randomUUID(),
@@ -152,12 +171,12 @@ export function createSwarmKanbanCard(input: CreateSwarmKanbanCardInput): SwarmK
     tags: input.tags,
   })
   file.cards.push(card)
-  writeKanbanFile(file)
+  scheduleKanbanSave()
   return card
 }
 
 export function updateSwarmKanbanCard(cardId: string, updates: UpdateSwarmKanbanCardInput): SwarmKanbanCard | null {
-  const file = readKanbanFile()
+  const file = loadKanbanFile()
   const index = file.cards.findIndex((card) => card.id === cardId)
   if (index === -1) return null
   const current = normalizeCard(file.cards[index])
@@ -171,6 +190,6 @@ export function updateSwarmKanbanCard(cardId: string, updates: UpdateSwarmKanban
     updatedAt: Date.now(),
   })
   file.cards[index] = next
-  writeKanbanFile(file)
+  scheduleKanbanSave()
   return next
 }

@@ -4,6 +4,7 @@ import { join } from 'node:path'
 const DATA_DIR = join(process.cwd(), '.runtime')
 const SESSIONS_FILE = join(DATA_DIR, 'local-sessions.json')
 const MAX_MESSAGES_PER_SESSION = 500
+const MAX_SESSIONS = 500
 
 export type LocalSession = {
   id: string
@@ -64,6 +65,18 @@ export function getLocalSession(sessionId: string): LocalSession | null {
   return store.sessions[sessionId] ?? null
 }
 
+function evictOldestSessionsIfNeeded(): void {
+  const ids = Object.keys(store.sessions)
+  if (ids.length <= MAX_SESSIONS) return
+  const sorted = ids.sort(
+    (a, b) => store.sessions[a].updatedAt - store.sessions[b].updatedAt,
+  )
+  for (const id of sorted.slice(0, ids.length - MAX_SESSIONS)) {
+    delete store.sessions[id]
+    delete store.messages[id]
+  }
+}
+
 export function ensureLocalSession(
   sessionId: string,
   model?: string,
@@ -78,6 +91,7 @@ export function ensureLocalSession(
       messageCount: 0,
     }
     store.messages[sessionId] = []
+    evictOldestSessionsIfNeeded()
     saveToDisk()
   }
   return store.sessions[sessionId]

@@ -540,24 +540,10 @@ export function useRealtimeChatHistory({
     persistPortableHistory(mergedMessages)
   }, [mergedMessages, portableMode])
 
-  // History has caught up — cleanup realtime buffer outside render
-  // DISABLED: This was aggressively clearing realtime messages before history
-  // caught up, causing the "message appears then disappears" bug.
-  // TODO: Re-enable with smarter timing (e.g. only after history confirms the message)
-  useEffect(() => {
-    return // disabled
-    if (portableMode) return
-    if (!effectiveSessionKey || effectiveSessionKey === 'new') return
-    if (realtimeMessages.length === 0) return
-    if (mergedMessages.length !== historyMessages.length) return
-    clearRealtimeBuffer(effectiveSessionKey)
-  }, [
-    clearRealtimeBuffer,
-    effectiveSessionKey,
-    historyMessages.length,
-    mergedMessages.length,
-    realtimeMessages.length,
-  ])
+  // Realtime-buffer cleanup was previously here and was removed: it
+  // aggressively cleared realtime messages before history caught up,
+  // causing a "message appears then disappears" bug. If reintroduced,
+  // it must only fire once history confirms the message.
 
   useEffect(() => {
     if (!onCompactionStart) return

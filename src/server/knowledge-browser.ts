@@ -281,6 +281,7 @@ export async function syncKnowledgeSource(): Promise<{
   try {
     const provider = new GitHubKnowledgeProvider(source.repo, source.branch, source.path)
     await provider.sync()
+    knowledgeCache = null
     return { source, success: true }
   } catch (err) {
     return {
@@ -411,9 +412,26 @@ function walkKnowledgeDir(
   }
 }
 
+// A full recursive walk + parse of every markdown file was previously done
+// on every single call (list, graph, and wikilink resolution each trigger
+// one). For a vault-sized knowledge base this re-reads the whole tree from
+// disk on every request. Cache for a short TTL: long enough to absorb the
+// several calls one page load makes, short enough that a fresh edit shows
+// up within a few seconds without needing a file watcher.
+const KNOWLEDGE_CACHE_TTL_MS = 5000
+let knowledgeCache: { at: number; pages: Array<ParsedKnowledgePage> } | null = null
+
 function getParsedKnowledgePages(): Array<ParsedKnowledgePage> {
+  const now = Date.now()
+  if (knowledgeCache && now - knowledgeCache.at < KNOWLEDGE_CACHE_TTL_MS) {
+    return knowledgeCache.pages
+  }
+
   const knowledgeRoot = path.resolve(getKnowledgeRoot())
-  if (!fs.existsSync(knowledgeRoot)) return []
+  if (!fs.existsSync(knowledgeRoot)) {
+    knowledgeCache = { at: now, pages: [] }
+    return []
+  }
 
   const results: Array<ParsedKnowledgePage> = []
   walkKnowledgeDir(results, knowledgeRoot, knowledgeRoot)
@@ -424,6 +442,7 @@ function getParsedKnowledgePages(): Array<ParsedKnowledgePage> {
     if (updatedDiff !== 0) return updatedDiff
     return a.meta.path.localeCompare(b.meta.path)
   })
+  knowledgeCache = { at: now, pages: results }
   return results
 }
 

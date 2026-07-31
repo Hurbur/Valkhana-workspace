@@ -1,9 +1,7 @@
-// TODO(orphan): hub-utils.tsx exports many helper functions extracted from
-// agent-hub-layout.tsx — but nothing actually imports from it. The functions here
-// (parseMissionGoal, toTitleCase, createTaskId, getModelDisplayLabel, etc.) are
-// duplicated as local functions inside agent-hub-layout.tsx.
-// To activate: replace local function definitions in agent-hub-layout.tsx with
-// imports from this file. Run `npx tsc --noEmit` after to verify no type drift.
+// Only resolveGatewayModelId is actually imported elsewhere
+// (use-mission-orchestrator.ts). The other exports here are unused —
+// agent-hub-layout.tsx was rewritten since this file was extracted and
+// no longer contains the local duplicates this comment used to describe.
 import type { GatewayModelCatalogEntry } from '@/lib/gateway-api'
 import { ROUGH_COST_PER_1K_TOKENS_USD } from '@/lib/config/costs'
 import type { MissionCheckpoint } from '../lib/mission-checkpoint'

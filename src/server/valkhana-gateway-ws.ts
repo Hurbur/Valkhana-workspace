@@ -150,6 +150,34 @@ export async function submitPromptAndCollectReply(
   text: string,
   options: { maxWaitMs?: number; resumeSessionId?: string } = {},
 ): Promise<PromptReply> {
+  try {
+    return await attemptPrompt(text, options)
+  } catch (error) {
+    // One bounded retry if the socket dropped before the turn resolved (no
+    // rpcError, just a closed connection) - not on an actual RPC error or a
+    // clean timeout, both of which a retry wouldn't fix. If session.create
+    // ran before the drop we have a durable id to resume from; otherwise
+    // this starts a fresh session, same as the first attempt would have.
+    if (error instanceof PromptDroppedError) {
+      return await attemptPrompt(text, {
+        ...options,
+        resumeSessionId: error.durableSessionId ?? options.resumeSessionId,
+      })
+    }
+    throw error
+  }
+}
+
+class PromptDroppedError extends Error {
+  constructor(public readonly durableSessionId: string | null) {
+    super('gateway connection dropped before the turn completed')
+  }
+}
+
+async function attemptPrompt(
+  text: string,
+  options: { maxWaitMs?: number; resumeSessionId?: string } = {},
+): Promise<PromptReply> {
   const maxWaitMs = options.maxWaitMs ?? 25_000
   const ticket = await mintWsTicket()
   const ws = new WebSocket(`${DASHBOARD_WS_URL}/api/ws?ticket=${encodeURIComponent(ticket)}`)
@@ -232,8 +260,16 @@ export async function submitPromptAndCollectReply(
     }
   })
 
-  ws.addEventListener('error', () => resolveDone?.())
-  ws.addEventListener('close', () => resolveDone?.())
+  let droppedEarly = false
+  let gaveUpWaiting = false
+  ws.addEventListener('error', () => {
+    if (!completed && !rpcError && !gaveUpWaiting) droppedEarly = true
+    resolveDone?.()
+  })
+  ws.addEventListener('close', () => {
+    if (!completed && !rpcError && !gaveUpWaiting) droppedEarly = true
+    resolveDone?.()
+  })
 
   await new Promise<void>((resolve) => {
     ws.addEventListener('open', () => resolve())
@@ -252,6 +288,7 @@ export async function submitPromptAndCollectReply(
   }
 
   await Promise.race([done, new Promise((resolve) => setTimeout(resolve, maxWaitMs))])
+  gaveUpWaiting = true
 
   try {
     ws.close()
@@ -261,6 +298,10 @@ export async function submitPromptAndCollectReply(
 
   if (rpcError) {
     throw rpcError
+  }
+
+  if (droppedEarly) {
+    throw new PromptDroppedError(durableSessionId)
   }
 
   if (!ephemeralSessionId || !durableSessionId) {
