@@ -9,6 +9,7 @@ import {
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { getRequestIP } from '@tanstack/react-start/server'
+import { isTailscaleCgnatIp } from './tailscale-cgnat'
 
 /**
  * Persistent session token store.
@@ -252,8 +253,13 @@ export function isLocalRequest(request: Request): boolean {
   const ip = getRequestIp(request)
   const localIPs = ['127.0.0.1', '::1', 'localhost', '::ffff:127.0.0.1']
   if (localIPs.includes(ip)) return true
-  // Allow Tailscale (100.x.x.x) and private LAN ranges
-  if (/^100\.\d+\.\d+\.\d+$/.test(ip)) return true
+  // Tailscale CGNAT range only (100.64.0.0/10) - previously a looser
+  // 100.\d+.\d+.\d+ match covered the entire 100.0.0.0/8 space, which is
+  // wider than Tailscale actually allocates and imprecise for a function
+  // that gates a real authentication bypass (requireLocalOrAuth below).
+  // Shared with valkhana-tailnet.ts's isTailscaleRequest() so both use the
+  // same precise definition.
+  if (isTailscaleCgnatIp(ip)) return true
   if (/^192\.168\./.test(ip)) return true
   if (/^10\./.test(ip)) return true
   return false

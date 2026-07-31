@@ -95,3 +95,38 @@ describe('getRequestIp (#125)', () => {
     expect(ip).toBe('198.51.100.5')
   })
 })
+
+describe('isLocalRequest CGNAT precision (#review-item-6)', () => {
+  function makeRequest(headers: Record<string, string>): Request {
+    return new Request('http://localhost/', { headers })
+  }
+
+  it('accepts a real Tailscale CGNAT address (100.64.0.0/10)', async () => {
+    process.env.TRUST_PROXY = '1'
+    const { isLocalRequest } = await import('./auth-middleware')
+    const req = makeRequest({ 'x-forwarded-for': '100.100.50.25' })
+    expect(isLocalRequest(req)).toBe(true)
+  })
+
+  it('rejects an address in 100.0.0.0/8 but outside the 100.64.0.0/10 CGNAT range', async () => {
+    // Previously matched by the old 100.\d+.\d+.\d+ check - this used to be
+    // an auth-bypass gap wider than the real Tailscale allocation.
+    process.env.TRUST_PROXY = '1'
+    const { isLocalRequest } = await import('./auth-middleware')
+    const req = makeRequest({ 'x-forwarded-for': '100.1.2.3' })
+    expect(isLocalRequest(req)).toBe(false)
+  })
+
+  it('still accepts private LAN ranges unchanged', async () => {
+    process.env.TRUST_PROXY = '1'
+    const { isLocalRequest } = await import('./auth-middleware')
+    expect(isLocalRequest(makeRequest({ 'x-forwarded-for': '192.168.1.50' }))).toBe(true)
+    expect(isLocalRequest(makeRequest({ 'x-forwarded-for': '10.0.0.5' }))).toBe(true)
+  })
+
+  it('rejects an ordinary public IP', async () => {
+    process.env.TRUST_PROXY = '1'
+    const { isLocalRequest } = await import('./auth-middleware')
+    expect(isLocalRequest(makeRequest({ 'x-forwarded-for': '203.0.113.77' }))).toBe(false)
+  })
+})

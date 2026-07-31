@@ -1,4 +1,5 @@
 import { getRequestIp } from './auth-middleware'
+import { isTailscaleCgnatIp } from './tailscale-cgnat'
 
 export class ValkhanaTailnetError extends Error {
   constructor(message: string) {
@@ -8,22 +9,6 @@ export class ValkhanaTailnetError extends Error {
 }
 
 const LOCAL_IPS = new Set(['127.0.0.1', '::1', 'localhost', '::ffff:127.0.0.1'])
-
-/**
- * Tailscale allocates client addresses from the CGNAT range 100.64.0.0/10 —
- * second octet 64-127, not the full 100.0.0.0/8 (which includes other
- * reserved/public space). Deliberately stricter than this repo's existing
- * `isLocalRequest` helper (auth-middleware.ts), which uses a looser
- * `100\.\d+\.\d+\.\d+` check acceptable for its own local/LAN classification
- * but not precise enough for a security-gating check.
- */
-function isTailscaleCgnatIp(ip: string): boolean {
-  const match = /^(\d{1,3})\.(\d{1,3})\.\d{1,3}\.\d{1,3}$/.exec(ip.trim())
-  if (!match) return false
-  const first = Number(match[1])
-  const second = Number(match[2])
-  return first === 100 && second >= 64 && second <= 127
-}
 
 /**
  * Fails closed: an unrecognized peer is never treated as tailnet. Loopback is
