@@ -946,7 +946,7 @@ function ChatDisplaySection() {
           />
         </SettingsRow>
       </SettingsSection>
-      {/* Mobile Navigation removed — not relevant for Hermes Workspace */}
+      {/* Mobile Navigation removed — not relevant for Valkhana */}
     </>
   )
 }

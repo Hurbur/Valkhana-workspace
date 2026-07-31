@@ -1,5 +1,5 @@
 /**
- * Agora — shared types for the Hermes Workspace community surface.
+ * Agora — shared types for the Valkhana community surface.
  *
  * v0.0: local mock lobby with fake users.
  * v0.1+: same types will be used for real WebSocket multiplayer.
@@ -41,7 +41,7 @@ export interface AgoraProfile {
   status: AgoraStatus
   /** Optional links (twitter, github, etc) */
   links?: { label: string; url: string }[]
-  /** Current activity hint, e.g. "Building Hermes Workspace" */
+  /** Current activity hint, e.g. "Building Valkhana" */
   activity?: string
 }
 

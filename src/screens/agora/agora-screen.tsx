@@ -1,5 +1,5 @@
 /**
- * AgoraScreen — the Hermes Workspace community lobby (v0.0).
+ * AgoraScreen — the Valkhana community lobby (v0.0).
  *
  * Layout:
  *   [Top bar: title · BETA · online count]

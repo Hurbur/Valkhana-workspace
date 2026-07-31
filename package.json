@@ -1,7 +1,7 @@
 {
-  "name": "hermes-workspace",
+  "name": "valkhana-workspace",
   "version": "2.3.0",
-  "description": "Desktop workspace for Hermes Agent — chat, orchestration, and multi-agent coding pipelines",
+  "description": "Valkhana — desktop workspace for Hermes Agent — chat, orchestration, and multi-agent coding pipelines",
   "author": "Eric (https://github.com/outsourc-e)",
   "license": "MIT",
   "private": true,

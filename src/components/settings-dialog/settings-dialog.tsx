@@ -2526,7 +2526,7 @@ export function SettingsDialog({
                 Settings
               </DialogTitle>
               <DialogDescription className="sr-only">
-                Configure Hermes Workspace
+                Configure Valkhana
               </DialogDescription>
             </div>
             <DialogClose

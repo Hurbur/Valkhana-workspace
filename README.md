@@ -1,9 +1,9 @@
 <div align="center">
 
-<img src="./public/claude-avatar.webp" alt="Hermes Workspace" width="80" style="border-radius: 16px" />
+<img src="./public/claude-avatar.webp" alt="Valkhana" width="80" style="border-radius: 16px" />
 <!-- avatar filename retained for cache stability — do not rename without coordinated cache-bust -->
 
-# Hermes Workspace
+# Valkhana
 
 **Your AI agent's command center — chat, files, memory, skills, and terminal in one place.**
 
@@ -16,7 +16,7 @@
 
 > **v2 — zero-fork.** Clone, don't fork. Runs on vanilla [`NousResearch/hermes-agent`](https://github.com/NousResearch/hermes-agent) installed via Nous's own installer. Chat, sessions, memory, skills, jobs, MCP, terminal, dashboard, Agent View, and Operations are all in vanilla parity. **Conductor** uses the dashboard mission API when available and falls back to Workspace-native Swarm dispatch (`mode: native-swarm`) when the dashboard endpoint is absent, preserving zero-fork behavior ([#262](https://github.com/outsourc-e/hermes-workspace/issues/262)).
 
-![Hermes Workspace](./docs/screenshots/splash.png)
+![Valkhana](./docs/screenshots/splash.png)
 
 </div>
 
