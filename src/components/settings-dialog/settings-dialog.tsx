@@ -1595,13 +1595,101 @@ const ENTERPRISE_THEMES = THEMES.map((theme) => ({
                       accent: '#7eb8f6',
                       text: '#c9d1d9',
                     }
-                  : {
-                      bg: '#F6F8FA',
-                      panel: '#FFFFFF',
-                      border: '#D0D7DE',
-                      accent: '#3b82f6',
-                      text: '#24292f',
-                    },
+                  : theme.id === 'claude-slate-light'
+                    ? {
+                        bg: '#f6f8fa',
+                        panel: '#eef2f6',
+                        border: '#d0d7de',
+                        accent: '#3b82f6',
+                        text: '#24292f',
+                      }
+                    : theme.id === 'scifi'
+                      ? {
+                          bg: '#060b18',
+                          panel: '#0d1b2a',
+                          border: '#1a3a5c',
+                          accent: '#00f0ff',
+                          text: '#e0f7fa',
+                        }
+                      : theme.id === 'scifi-light'
+                        ? {
+                            bg: '#eef1f5',
+                            panel: '#e8ecf2',
+                            border: '#c4cdd8',
+                            accent: '#0097a7',
+                            text: '#0a1628',
+                          }
+                        : theme.id === 'atlas-blue'
+                          ? {
+                              bg: '#050a12',
+                              panel: '#0a1828',
+                              border: '#19466b',
+                              accent: '#50c8ff',
+                              text: '#c8e8ff',
+                            }
+                          : theme.id === 'atlas-blue-light'
+                            ? {
+                                bg: '#edf8ff',
+                                panel: '#f5fbff',
+                                border: '#b6d8ed',
+                                accent: '#147fb8',
+                                text: '#10253a',
+                              }
+                            : theme.id === 'purple'
+                              ? {
+                                  bg: '#060818',
+                                  panel: '#10102e',
+                                  border: '#51398d',
+                                  accent: '#b48cff',
+                                  text: '#e4d4ff',
+                                }
+                              : theme.id === 'purple-light'
+                                ? {
+                                    bg: '#f7f2ff',
+                                    panel: '#fbf8ff',
+                                    border: '#d4bee9',
+                                    accent: '#7c4dce',
+                                    text: '#281942',
+                                  }
+                                : theme.id === 'red-gold'
+                                  ? {
+                                      bg: '#080604',
+                                      panel: '#1a1009',
+                                      border: '#744422',
+                                      accent: '#ffb347',
+                                      text: '#ffe8c8',
+                                    }
+                                  : theme.id === 'red-gold-light'
+                                    ? {
+                                        bg: '#fff6ed',
+                                        panel: '#fffaf5',
+                                        border: '#e8c39e',
+                                        accent: '#b85a13',
+                                        text: '#3b2110',
+                                      }
+                                    : theme.id === 'pink'
+                                      ? {
+                                          bg: '#060810',
+                                          panel: '#17101f',
+                                          border: '#79324f',
+                                          accent: '#ff8cb8',
+                                          text: '#ffe8f2',
+                                        }
+                                      : theme.id === 'pink-light'
+                                        ? {
+                                            bg: '#fff4f8',
+                                            panel: '#fff9fb',
+                                            border: '#edbdd0',
+                                            accent: '#c84d80',
+                                            text: '#3a1727',
+                                          }
+                                        : {
+                                            bg: '#F6F8FA',
+                                            panel: '#FFFFFF',
+                                            border: '#D0D7DE',
+                                            accent: '#3b82f6',
+                                            text: '#24292f',
+                                          },
 }))
 
 function ThemeSwatch({

@@ -843,3 +843,220 @@
 [data-theme='pink-light'] :focus-visible {
   outline-color: var(--theme-accent);
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   AtlasOS theme amber-family remap (atlas-blue/purple/red-gold/pink)
+   ──────────────────────────────────────────────────────────────────
+   Same defect scifi's own amber/red/emerald/yellow/neutral remap above
+   was built to prevent: components using default Tailwind bg-amber-100/
+   text-amber-800 (e.g. usage-meter.tsx's selected menu-item state and
+   warning badges) render illegibly - pale-on-pale or invisible - against
+   these themes' dark backgrounds without a remap. Scoped to the amber
+   family specifically (the one implicated by the actual illegible
+   consumers found), not the full 5-family treatment scifi has, since
+   red/emerald/yellow/neutral badges were not found broken against these
+   backgrounds. Dark variants invert the scale (50=near-black, 950=palest)
+   matching scifi dark's own convention for background-context colors;
+   light variants use the standard pale-to-dark direction, both anchored
+   on each theme's own accent hue at 500/600 rather than reusing amber/teal.
+   ══════════════════════════════════════════════════════════════════ */
+
+[data-theme='atlas-blue'] {
+  --color-amber-50: #0a1a2e !important;
+  --color-amber-100: #123152 !important;
+  --color-amber-200: #1a4a78 !important;
+  --color-amber-300: #2570a8 !important;
+  --color-amber-400: #3a92c8 !important;
+  --color-amber-500: #50c8ff !important;
+  --color-amber-600: #6dd4ff !important;
+  --color-amber-700: #9de3ff !important;
+  --color-amber-800: #cdf1ff !important;
+  --color-amber-900: #e6f8ff !important;
+  --color-amber-950: #f2fbff !important;
+  --color-white: #0a1828 !important;
+}
+[data-theme='atlas-blue'] .bg-amber-100 {
+  background-color: var(--color-amber-100) !important;
+  color: var(--color-amber-800) !important;
+}
+[data-theme='atlas-blue'] .bg-amber-100 .text-amber-800 {
+  color: var(--color-amber-800) !important;
+}
+[data-theme='atlas-blue'] .bg-amber-100 .text-amber-600 {
+  color: var(--color-amber-600) !important;
+}
+[data-theme='atlas-blue'] .bg-amber-100 .text-primary-600 {
+  color: var(--color-amber-600) !important;
+}
+[data-theme='atlas-blue'] .bg-amber-100 .text-primary-300 {
+  color: var(--color-amber-700) !important;
+}
+[data-theme='atlas-blue'] .bg-primary-50 > button.bg-primary-100 {
+  background-color: rgba(80, 200, 255, 0.15) !important;
+  color: var(--theme-accent) !important;
+  box-shadow: 0 0 8px rgba(80, 200, 255, 0.2) !important;
+}
+
+[data-theme='atlas-blue-light'] {
+  --color-amber-50: #e8f6fc !important;
+  --color-amber-100: #d0ecf8 !important;
+  --color-amber-200: #a8ddf0 !important;
+  --color-amber-300: #78c8e4 !important;
+  --color-amber-400: #40a8d0 !important;
+  --color-amber-500: #147fb8 !important;
+  --color-amber-600: #0f689c !important;
+  --color-amber-700: #0b5078 !important;
+  --color-amber-800: #073a58 !important;
+  --color-amber-900: #042840 !important;
+  --color-amber-950: #021830 !important;
+}
+
+[data-theme='purple'] {
+  --color-amber-50: #180f2e !important;
+  --color-amber-100: #2a1d4d !important;
+  --color-amber-200: #402d70 !important;
+  --color-amber-300: #5c439a !important;
+  --color-amber-400: #7d63c0 !important;
+  --color-amber-500: #b48cff !important;
+  --color-amber-600: #c4a3ff !important;
+  --color-amber-700: #d8c0ff !important;
+  --color-amber-800: #ebdcff !important;
+  --color-amber-900: #f5edff !important;
+  --color-amber-950: #faf6ff !important;
+  --color-white: #10102e !important;
+}
+[data-theme='purple'] .bg-amber-100 {
+  background-color: var(--color-amber-100) !important;
+  color: var(--color-amber-800) !important;
+}
+[data-theme='purple'] .bg-amber-100 .text-amber-800 {
+  color: var(--color-amber-800) !important;
+}
+[data-theme='purple'] .bg-amber-100 .text-amber-600 {
+  color: var(--color-amber-600) !important;
+}
+[data-theme='purple'] .bg-amber-100 .text-primary-600 {
+  color: var(--color-amber-600) !important;
+}
+[data-theme='purple'] .bg-amber-100 .text-primary-300 {
+  color: var(--color-amber-700) !important;
+}
+[data-theme='purple'] .bg-primary-50 > button.bg-primary-100 {
+  background-color: rgba(180, 140, 255, 0.15) !important;
+  color: var(--theme-accent) !important;
+  box-shadow: 0 0 8px rgba(180, 140, 255, 0.2) !important;
+}
+
+[data-theme='purple-light'] {
+  --color-amber-50: #f3ecfb !important;
+  --color-amber-100: #e6d8f6 !important;
+  --color-amber-200: #d0b8ec !important;
+  --color-amber-300: #b493de !important;
+  --color-amber-400: #9670cc !important;
+  --color-amber-500: #7c4dce !important;
+  --color-amber-600: #653eab !important;
+  --color-amber-700: #4e307f !important;
+  --color-amber-800: #382258 !important;
+  --color-amber-900: #26173c !important;
+  --color-amber-950: #180e28 !important;
+}
+
+[data-theme='red-gold'] {
+  --color-amber-50: #241608 !important;
+  --color-amber-100: #402512 !important;
+  --color-amber-200: #613a1c !important;
+  --color-amber-300: #8a5628 !important;
+  --color-amber-400: #bd7d34 !important;
+  --color-amber-500: #ffb347 !important;
+  --color-amber-600: #ffc26b !important;
+  --color-amber-700: #ffd699 !important;
+  --color-amber-800: #ffe8c2 !important;
+  --color-amber-900: #fff3e0 !important;
+  --color-amber-950: #fff9ee !important;
+  --color-white: #1a1009 !important;
+}
+[data-theme='red-gold'] .bg-amber-100 {
+  background-color: var(--color-amber-100) !important;
+  color: var(--color-amber-800) !important;
+}
+[data-theme='red-gold'] .bg-amber-100 .text-amber-800 {
+  color: var(--color-amber-800) !important;
+}
+[data-theme='red-gold'] .bg-amber-100 .text-amber-600 {
+  color: var(--color-amber-600) !important;
+}
+[data-theme='red-gold'] .bg-amber-100 .text-primary-600 {
+  color: var(--color-amber-600) !important;
+}
+[data-theme='red-gold'] .bg-amber-100 .text-primary-300 {
+  color: var(--color-amber-700) !important;
+}
+[data-theme='red-gold'] .bg-primary-50 > button.bg-primary-100 {
+  background-color: rgba(255, 179, 71, 0.15) !important;
+  color: var(--theme-accent) !important;
+  box-shadow: 0 0 8px rgba(255, 179, 71, 0.2) !important;
+}
+
+[data-theme='red-gold-light'] {
+  --color-amber-50: #fbeee0 !important;
+  --color-amber-100: #f6dcc0 !important;
+  --color-amber-200: #edc090 !important;
+  --color-amber-300: #dfa060 !important;
+  --color-amber-400: #cc8038 !important;
+  --color-amber-500: #b85a13 !important;
+  --color-amber-600: #96470f !important;
+  --color-amber-700: #70360c !important;
+  --color-amber-800: #4e2508 !important;
+  --color-amber-900: #331805 !important;
+  --color-amber-950: #200f03 !important;
+}
+
+[data-theme='pink'] {
+  --color-amber-50: #200f18 !important;
+  --color-amber-100: #391a2b !important;
+  --color-amber-200: #572a40 !important;
+  --color-amber-300: #7d3d5a !important;
+  --color-amber-400: #ac5578 !important;
+  --color-amber-500: #ff8cb8 !important;
+  --color-amber-600: #ffa3c8 !important;
+  --color-amber-700: #ffc0da !important;
+  --color-amber-800: #ffdcec !important;
+  --color-amber-900: #ffeef5 !important;
+  --color-amber-950: #fff5fa !important;
+  --color-white: #17101f !important;
+}
+[data-theme='pink'] .bg-amber-100 {
+  background-color: var(--color-amber-100) !important;
+  color: var(--color-amber-800) !important;
+}
+[data-theme='pink'] .bg-amber-100 .text-amber-800 {
+  color: var(--color-amber-800) !important;
+}
+[data-theme='pink'] .bg-amber-100 .text-amber-600 {
+  color: var(--color-amber-600) !important;
+}
+[data-theme='pink'] .bg-amber-100 .text-primary-600 {
+  color: var(--color-amber-600) !important;
+}
+[data-theme='pink'] .bg-amber-100 .text-primary-300 {
+  color: var(--color-amber-700) !important;
+}
+[data-theme='pink'] .bg-primary-50 > button.bg-primary-100 {
+  background-color: rgba(255, 140, 184, 0.15) !important;
+  color: var(--theme-accent) !important;
+  box-shadow: 0 0 8px rgba(255, 140, 184, 0.2) !important;
+}
+
+[data-theme='pink-light'] {
+  --color-amber-50: #fbecf1 !important;
+  --color-amber-100: #f6d8e3 !important;
+  --color-amber-200: #edb0c8 !important;
+  --color-amber-300: #de84a8 !important;
+  --color-amber-400: #ca5f8c !important;
+  --color-amber-500: #c84d80 !important;
+  --color-amber-600: #a53d68 !important;
+  --color-amber-700: #7c2f4e !important;
+  --color-amber-800: #562037 !important;
+  --color-amber-900: #381523 !important;
+  --color-amber-950: #240d17 !important;
+}
