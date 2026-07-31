@@ -116,7 +116,13 @@ function readYamlConfig(configPath: string): Record<string, unknown> {
     return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
       ? (parsed as Record<string, unknown>)
       : {}
-  } catch {
+  } catch (err) {
+    // A missing config file is expected (optional per-scope overlay) and
+    // stays silent. Anything else -- the file exists but is unreadable or
+    // not valid YAML -- silently dropping it would mask real config, so log it.
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+      console.error(`[hermes-config-store] Failed to read/parse ${configPath}:`, err)
+    }
     return {}
   }
 }
@@ -129,7 +135,13 @@ function writeYamlConfig(configPath: string, config: Record<string, unknown>): v
 function readEnv(envPath: string): Record<string, string> {
   try {
     return parseEnvFile(fs.readFileSync(envPath, 'utf-8'))
-  } catch {
+  } catch (err) {
+    // A missing .env is expected (optional per-scope overlay) and stays
+    // silent. Anything else -- exists but unreadable -- gets logged so it
+    // doesn't silently drop real env vars.
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+      console.error(`[hermes-config-store] Failed to read ${envPath}:`, err)
+    }
     return {}
   }
 }
@@ -146,7 +158,13 @@ function readAuthProfiles(authProfilesPath: string): Record<string, unknown> {
     return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
       ? (parsed as Record<string, unknown>)
       : {}
-  } catch {
+  } catch (err) {
+    // A missing auth-profiles file is expected and stays silent. Anything
+    // else -- exists but unreadable/corrupt -- gets logged; silently
+    // dropping it would mask real auth-profile data.
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+      console.error(`[hermes-config-store] Failed to read/parse ${authProfilesPath}:`, err)
+    }
     return {}
   }
 }

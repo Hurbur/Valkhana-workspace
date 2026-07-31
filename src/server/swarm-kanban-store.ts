@@ -77,7 +77,12 @@ function loadKanbanFile(): SwarmKanbanFile {
     const raw = fs.readFileSync(SWARM_KANBAN_FILE, 'utf-8').trim()
     const parsed = raw ? (JSON.parse(raw) as Partial<SwarmKanbanFile>) : {}
     cache = { cards: Array.isArray(parsed.cards) ? parsed.cards.map(normalizeCard) : [] }
-  } catch {
+  } catch (err) {
+    // ensureKanbanFile() above guarantees the file exists, so a failure
+    // here means the on-disk JSON is corrupt/unreadable, not merely absent.
+    // Log it -- writeKanbanFileNow() would otherwise silently overwrite the
+    // corrupt file with an empty board, losing every real card.
+    console.error(`[swarm-kanban-store] Failed to read/parse ${SWARM_KANBAN_FILE}, starting from empty board:`, err)
     cache = { cards: [] }
   }
   return cache

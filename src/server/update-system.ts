@@ -90,7 +90,13 @@ function readPendingReleaseNotes(): Array<ReleaseNoteSection> {
       sections?: Array<ReleaseNoteSection>
     }
     return Array.isArray(raw.sections) ? raw.sections : []
-  } catch {
+  } catch (err) {
+    // A missing pending-notes file is expected (nothing queued yet) and
+    // stays silent. Anything else -- exists but unreadable/corrupt -- gets
+    // logged so a lost release-notes queue doesn't disappear without a trace.
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+      console.error(`[update-system] Failed to read/parse ${pendingNotesPath()}:`, err)
+    }
     return []
   }
 }

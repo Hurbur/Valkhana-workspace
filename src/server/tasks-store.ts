@@ -51,7 +51,12 @@ function readTaskFile(): TaskFile {
     if (!raw) return { tasks: [] }
     const parsed = JSON.parse(raw) as Partial<TaskFile>
     return { tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [] }
-  } catch {
+  } catch (err) {
+    // ensureTasksFile() above guarantees the file exists, so a failure here
+    // means the on-disk JSON is corrupt/unreadable, not merely absent. Log
+    // it -- a subsequent write would otherwise silently replace every real
+    // task with an empty file with no trace of what happened.
+    console.error(`[tasks-store] Failed to read/parse ${TASKS_FILE}, starting from empty task list:`, err)
     return { tasks: [] }
   }
 }

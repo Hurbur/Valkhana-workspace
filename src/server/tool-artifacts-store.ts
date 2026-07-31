@@ -46,7 +46,12 @@ function loadIndex(): void {
     if (parsed && typeof parsed === 'object' && parsed.artifacts) {
       index = parsed
     }
-  } catch {
+  } catch (err) {
+    // The existsSync() check above means this only fires when the file is
+    // present but corrupt/unreadable. Log it -- saveIndex() would otherwise
+    // silently overwrite the corrupt file with an empty index, losing every
+    // real artifact reference.
+    console.error(`[tool-artifacts-store] Failed to read/parse ${INDEX_FILE}, starting from empty index:`, err)
     index = { artifacts: {} }
   }
 }

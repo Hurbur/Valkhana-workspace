@@ -41,8 +41,11 @@ function loadFromDisk(): void {
         store = parsed
       }
     }
-  } catch {
-    // ignore corrupt local cache
+  } catch (err) {
+    // Corrupt local cache -- fall through to the in-memory default (still
+    // correct behavior, this is a disposable cache), but log it since a
+    // subsequent saveToDisk() will silently overwrite the corrupt file.
+    console.error(`[local-session-store] Failed to read/parse ${SESSIONS_FILE}, starting from empty cache:`, err)
   }
 }
 

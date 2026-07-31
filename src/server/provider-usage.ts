@@ -148,8 +148,11 @@ function saveClaudeCredentials(creds: ClaudeCredentials): void {
   if (creds.source === 'file') {
     try {
       writeFileSync(expandHome(CLAUDE_CRED_FILE), text, 'utf-8')
-    } catch {
-      /* best effort */
+    } catch (err) {
+      // A failed persist here means the refreshed OAuth token only lives in
+      // memory -- the next process restart falls back to the stale token
+      // and re-triggers a refresh (or fails auth) with no clue why. Log it.
+      console.error(`[provider-usage] Failed to persist refreshed Claude credentials to ${CLAUDE_CRED_FILE}:`, err)
     }
   } else if (creds.source === 'keychain' && process.platform === 'darwin') {
     try {
@@ -157,8 +160,10 @@ function saveClaudeCredentials(creds: ClaudeCredentials): void {
         `security add-generic-password -U -s "${CLAUDE_KEYCHAIN_SERVICE}" -w "${text.replace(/"/g, '\\"')}" 2>/dev/null`,
         { timeout: 5000 },
       )
-    } catch {
-      /* best effort */
+    } catch (err) {
+      // Same reasoning as the file branch above -- silent failure here
+      // means silent, hard-to-diagnose auth drift after a restart.
+      console.error(`[provider-usage] Failed to persist refreshed Claude credentials to macOS keychain:`, err)
     }
   }
 }
