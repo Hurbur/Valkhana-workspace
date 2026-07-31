@@ -12,6 +12,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
+import { APP_NAME } from '@/lib/brand'
 import {
   Area,
   AreaChart,
@@ -923,7 +924,7 @@ export function DashboardScreen() {
                 lineHeight: 1.1,
               }}
             >
-              Valkhana
+              {APP_NAME}
             </h1>
           </div>
         </div>

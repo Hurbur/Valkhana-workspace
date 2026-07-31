@@ -1,4 +1,5 @@
 import { HugeiconsIcon } from '@hugeicons/react'
+import { APP_NAME } from '@/lib/brand'
 import {
   ArrowDown01Icon,
   ArrowLeft01Icon,
@@ -959,7 +960,7 @@ function ChatSidebarComponent({
                   className="text-sm font-semibold tracking-tight"
                   style={{ color: 'var(--theme-text)' }}
                 >
-                  Valkhana
+                  {APP_NAME}
                 </span>
               </Link>
             </motion.div>

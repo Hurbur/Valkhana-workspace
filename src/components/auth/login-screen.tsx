@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { APP_NAME } from '@/lib/brand'
 
 export function LoginScreen() {
   const [password, setPassword] = useState('')
@@ -61,7 +62,7 @@ export function LoginScreen() {
                 <circle cx="50" cy="50" r="15" fill="currentColor" />
               </svg>
               <h1 className="text-2xl font-bold tracking-tight text-primary-900">
-                Valkhana
+                {APP_NAME}
               </h1>
             </div>
           </div>

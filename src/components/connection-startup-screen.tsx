@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { AuthStatus } from '@/lib/claude-auth'
 import { writeTextToClipboard } from '@/lib/clipboard'
 import { fetchClaudeAuthStatus } from '@/lib/claude-auth'
+import { APP_NAME } from '@/lib/brand'
 
 const POLL_INTERVAL_MS = 2_000
 const FAILURE_REVEAL_MS = 5_000
@@ -236,7 +237,7 @@ export function ConnectionStartupScreen({ onConnected }: Props) {
         />
 
         <h1 className="text-[2rem] font-semibold tracking-tight text-white">
-          Valkhana
+          {APP_NAME}
         </h1>
 
         {/* Connecting spinner */}

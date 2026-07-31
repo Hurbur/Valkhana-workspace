@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
+import { APP_NAME } from '@/lib/brand'
 
-const BASE_TITLE = 'Valkhana'
+const BASE_TITLE = APP_NAME
 
 /**
  * Sets document.title for the current page.
