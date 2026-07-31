@@ -12,6 +12,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
 import YAML from 'yaml'
+import { getValkhanaDashboardCookie } from '../../server/valkhana-dashboard-adapter'
 
 type RawAssignee = {
   id?: unknown
@@ -57,8 +58,16 @@ function getProfileNames(): string[] {
   }
 }
 
-function authHeaders(): Record<string, string> {
-  return BEARER_TOKEN ? { Authorization: `Bearer ${BEARER_TOKEN}` } : {}
+async function authHeaders(): Promise<Record<string, string>> {
+  const headers: Record<string, string> = {}
+  if (BEARER_TOKEN) headers.Authorization = `Bearer ${BEARER_TOKEN}`
+  try {
+    const cookie = await getValkhanaDashboardCookie()
+    if (cookie) headers.Cookie = cookie
+  } catch {
+    // No dashboard credentials configured - proceed with whatever auth we have.
+  }
+  return headers
 }
 
 function titleCaseProfile(name: string): string {
@@ -108,7 +117,7 @@ async function fetchJson(url: string): Promise<unknown | null> {
   try {
     const res = await fetch(url, {
       signal: AbortSignal.timeout(2000),
-      headers: authHeaders(),
+      headers: await authHeaders(),
     })
     if (!res.ok) return null
     return await res.json()

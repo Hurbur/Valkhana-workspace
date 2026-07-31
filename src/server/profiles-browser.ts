@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import YAML from 'yaml'
+import { getValkhanaDashboardCookie } from './valkhana-dashboard-adapter'
 
 export type ProfileSummary = {
   name: string
@@ -218,6 +219,12 @@ async function fetchDashboardProfiles(): Promise<{
     const token = getDashboardToken()
     const headers: Record<string, string> = {}
     if (token) headers['Authorization'] = `Bearer ${token}`
+    try {
+      const cookie = await getValkhanaDashboardCookie()
+      if (cookie) headers['Cookie'] = cookie
+    } catch {
+      // No dashboard credentials configured - proceed with whatever auth we have.
+    }
 
     const response = await fetch(`${dashboardUrl}/api/profiles`, {
       headers,
@@ -317,6 +324,12 @@ export async function readProfileWithFallback(
       const token = getDashboardToken()
       const headers: Record<string, string> = {}
       if (token) headers['Authorization'] = `Bearer ${token}`
+      try {
+        const cookie = await getValkhanaDashboardCookie()
+        if (cookie) headers['Cookie'] = cookie
+      } catch {
+        // No dashboard credentials configured - proceed with whatever auth we have.
+      }
 
       const response = await fetch(`${dashboardUrl}/api/profiles`, {
         headers,
