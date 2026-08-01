@@ -140,6 +140,7 @@ export function TerminalWorkspace({
   const containerMapRef = useRef(new Map<string, HTMLDivElement>())
   const terminalMapRef = useRef(new Map<string, Terminal>())
   const fitMapRef = useRef(new Map<string, FitAddon>())
+  const resizeObserverMapRef = useRef(new Map<string, ResizeObserver>())
   const readerMapRef = useRef(
     new Map<string, ReadableStreamDefaultReader<Uint8Array>>(),
   )
@@ -556,6 +557,22 @@ export function TerminalWorkspace({
       terminal.open(container)
       fitAddon.fit()
 
+      // terminal.open()+fit() only compute against the container's size at
+      // this exact moment. On a full page reload (or any mount where the
+      // panel's layout hasn't settled yet -- flex/grid reflow, a tab
+      // becoming visible after mount, etc.) the container can still be
+      // zero-sized or wrongly-sized here, so xterm's canvas paints blank
+      // even though the underlying text buffer is correct -- which is why
+      // the content reappears on selection (that reads the DOM/buffer, not
+      // the canvas). Re-fit and force a full repaint whenever the
+      // container's real size changes after creation.
+      const resizeObserver = new ResizeObserver(() => {
+        fitAddon.fit()
+        terminal.refresh(0, terminal.rows - 1)
+      })
+      resizeObserver.observe(container)
+      resizeObserverMapRef.current.set(tab.id, resizeObserver)
+
       terminal.onData(function onData(data) {
         void sendInput(tab.id, data)
       })
@@ -698,6 +715,10 @@ export function TerminalWorkspace({
           return undefined
         })
       }
+      for (const observer of resizeObserverMapRef.current.values()) {
+        observer.disconnect()
+      }
+      resizeObserverMapRef.current.clear()
       readerMapRef.current.clear()
       for (const terminal of terminalMapRef.current.values()) {
         terminal.dispose()

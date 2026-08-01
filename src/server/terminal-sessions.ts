@@ -136,7 +136,9 @@ export function createTerminalSession(params: {
           COLUMNS: String(cols),
           LINES: String(rows),
         } as Record<string, string>,
-        stdio: ['pipe', 'pipe', 'pipe'],
+        // 4th pipe (fd 3 in the child) is a dedicated out-of-band resize
+        // control channel -- see resize() below and pty-helper.py.
+        stdio: ['pipe', 'pipe', 'pipe', 'pipe'],
       },
     )
   }
@@ -185,12 +187,21 @@ export function createTerminalSession(params: {
       }
     },
 
-    resize(_newCols: number, _newRows: number) {
-      // Send SIGWINCH to the Python helper, which propagates to the PTY
-      if (proc.pid) {
-        // Note: can't update env on running ChildProcess, SIGWINCH alone is sent
+    resize(newCols: number, newRows: number) {
+      // Write the new size to the dedicated control pipe (fd 3) so
+      // pty-helper.py can actually apply it via TIOCSWINSZ. A bare
+      // SIGWINCH alone did nothing useful here: a running child
+      // process's environment can't be updated from the parent after
+      // spawn, so the helper had no way to learn the real new size and
+      // was just re-applying whatever size it was spawned with.
+      const controlPipe = proc.stdio?.[3]
+      if (
+        controlPipe &&
+        'writable' in controlPipe &&
+        controlPipe.writable
+      ) {
         try {
-          process.kill(proc.pid, 'SIGWINCH')
+          controlPipe.write(String(newCols) + ' ' + String(newRows) + '\n')
         } catch {
           /* */
         }

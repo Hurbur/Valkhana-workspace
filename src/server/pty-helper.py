@@ -67,22 +67,32 @@ def main():
         # Set stdout to binary/unbuffered
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, write_through=True)
 
-        # Handle resize signal
-        def handle_winch(signum, frame):
-            # Read new size from environment (set by parent process)
+        # Resize is delivered out-of-band on fd 3 (a dedicated control
+        # pipe, separate from stdin) as a line of text "cols rows\n".
+        # Previously this relied on SIGWINCH + re-reading COLUMNS/LINES
+        # from os.environ, but a running child processs environment can
+        # never be updated from the parent after spawn -- every resize
+        # was silently re-applying the original spawn-time size forever.
+        resize_fd = 3
+        try:
+            os.set_blocking(resize_fd, False)
+            has_resize_fd = True
+        except OSError:
+            has_resize_fd = False
+
+        resize_buf = b''
+
+        def apply_resize(cols_val, rows_val):
             try:
-                new_cols = int(os.environ.get('COLUMNS', cols))
-                new_rows = int(os.environ.get('LINES', rows))
-                set_winsize(master_fd, new_rows, new_cols)
+                set_winsize(master_fd, rows_val, cols_val)
                 os.kill(pid, signal.SIGWINCH)
-            except:
+            except Exception:
                 pass
 
-        signal.signal(signal.SIGWINCH, handle_winch)
-
         try:
+            watch_fds = [master_fd, stdin_fd] + ([resize_fd] if has_resize_fd else [])
             while True:
-                rlist, _, _ = select.select([master_fd, stdin_fd], [], [], 1.0)
+                rlist, _, _ = select.select(watch_fds, [], [], 1.0)
                 
                 if master_fd in rlist:
                     try:
@@ -101,6 +111,22 @@ def main():
                     if not data:
                         break
                     os.write(master_fd, data)
+
+                if has_resize_fd and resize_fd in rlist:
+                    try:
+                        chunk = os.read(resize_fd, 4096)
+                    except OSError:
+                        chunk = b''
+                    if chunk:
+                        resize_buf += chunk
+                        while b'\n' in resize_buf:
+                            line, resize_buf = resize_buf.split(b'\n', 1)
+                            parts = line.decode('ascii', 'ignore').split()
+                            if len(parts) == 2:
+                                try:
+                                    apply_resize(int(parts[0]), int(parts[1]))
+                                except ValueError:
+                                    pass
         except (IOError, OSError):
             pass
         finally:
