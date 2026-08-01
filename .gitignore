@@ -153,3 +153,4 @@ skills-bundle/
 .env.bak-*
 pr-triage-20260505-*/
 .worktrees/
+test-results/
