@@ -1,4 +1,7 @@
 import { createServer } from 'node:http'
+import { createServer as createHttpsServer } from 'node:https'
+import { readFileSync, existsSync } from 'node:fs'
+
 import { readFile, stat } from 'node:fs/promises'
 import { join, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -287,12 +290,33 @@ async function requestHandler(req, res) {
   }
 }
 
+// Optional TLS via a Tailscale-issued cert (see `tailscale cert`). Both
+// paths must exist and be readable for HTTPS to activate; otherwise this
+// falls back to plain HTTP exactly as before -- local/dev setups with no
+// cert configured are unaffected.
+const TLS_CERT_PATH = process.env.TLS_CERT_PATH || ''
+const TLS_KEY_PATH = process.env.TLS_KEY_PATH || ''
+const tlsEnabled =
+  Boolean(TLS_CERT_PATH) &&
+  Boolean(TLS_KEY_PATH) &&
+  existsSync(TLS_CERT_PATH) &&
+  existsSync(TLS_KEY_PATH)
+
 function listenOn(bindHost) {
-  const httpServer = createServer(requestHandler)
-  httpServer.listen(port, bindHost, () => {
-    console.log(`Hermes Workspace running at http://${bindHost}:${port}`)
+  const server = tlsEnabled
+    ? createHttpsServer(
+        {
+          cert: readFileSync(TLS_CERT_PATH),
+          key: readFileSync(TLS_KEY_PATH),
+        },
+        requestHandler,
+      )
+    : createServer(requestHandler)
+  const proto = tlsEnabled ? 'https' : 'http'
+  server.listen(port, bindHost, () => {
+    console.log(`Hermes Workspace running at ${proto}://${bindHost}:${port}`)
   })
-  return httpServer
+  return server
 }
 
 listenOn(host)
