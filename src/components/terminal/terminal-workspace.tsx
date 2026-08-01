@@ -141,6 +141,7 @@ export function TerminalWorkspace({
   const terminalMapRef = useRef(new Map<string, Terminal>())
   const fitMapRef = useRef(new Map<string, FitAddon>())
   const resizeObserverMapRef = useRef(new Map<string, ResizeObserver>())
+  const visibilityHandlerMapRef = useRef(new Map<string, () => void>())
   const readerMapRef = useRef(
     new Map<string, ReadableStreamDefaultReader<Uint8Array>>(),
   )
@@ -557,21 +558,42 @@ export function TerminalWorkspace({
       terminal.open(container)
       fitAddon.fit()
 
-      // terminal.open()+fit() only compute against the container's size at
-      // this exact moment. On a full page reload (or any mount where the
-      // panel's layout hasn't settled yet -- flex/grid reflow, a tab
-      // becoming visible after mount, etc.) the container can still be
-      // zero-sized or wrongly-sized here, so xterm's canvas paints blank
-      // even though the underlying text buffer is correct -- which is why
-      // the content reappears on selection (that reads the DOM/buffer, not
-      // the canvas). Re-fit and force a full repaint whenever the
-      // container's real size changes after creation.
-      const resizeObserver = new ResizeObserver(() => {
+      // Defense in depth against xterm's canvas painting blank while the
+      // underlying buffer is actually fine (selecting text reveals it --
+      // that reads the DOM/buffer, not the canvas). Three distinct trigger
+      // classes, each needing its own fix:
+      const forceRepaint = () => {
         fitAddon.fit()
         terminal.refresh(0, terminal.rows - 1)
-      })
+      }
+
+      // 1) Initial mount timing: this ref callback fires for EVERY tab on
+      //    mount, including hidden ones (tabs.map() always renders all tab
+      //    DOM, just toggling the hidden/block class -- not conditional
+      //    rendering). On a full page reload especially, the browser's own
+      //    layout pass may not have settled yet at the exact moment this
+      //    runs, so the very first fit()/paint above can race real layout.
+      //    Defer one more fit+repaint to after the browser's next paint.
+      requestAnimationFrame(forceRepaint)
+
+      // 2) Resize after creation (tab switching from hidden -> block,
+      //    panel/flex layout changes, etc.)
+      const resizeObserver = new ResizeObserver(forceRepaint)
       resizeObserver.observe(container)
       resizeObserverMapRef.current.set(tab.id, resizeObserver)
+
+      // 3) Tab/connection stalls: a backgrounded browser tab throttles
+      //    rAF-driven rendering (xterm's own render loop included), and a
+      //    dropped-then-restored network connection can leave the canvas
+      //    stale even though new data is arriving again. Force a repaint
+      //    whenever the document becomes visible again -- covers both
+      //    "tab was backgrounded and stalled" and "reconnected after a
+      //    network drop", not just container-size changes.
+      const onVisible = () => {
+        if (document.visibilityState === 'visible') forceRepaint()
+      }
+      document.addEventListener('visibilitychange', onVisible)
+      visibilityHandlerMapRef.current.set(tab.id, onVisible)
 
       terminal.onData(function onData(data) {
         void sendInput(tab.id, data)
@@ -719,6 +741,10 @@ export function TerminalWorkspace({
         observer.disconnect()
       }
       resizeObserverMapRef.current.clear()
+      for (const handler of visibilityHandlerMapRef.current.values()) {
+        document.removeEventListener('visibilitychange', handler)
+      }
+      visibilityHandlerMapRef.current.clear()
       readerMapRef.current.clear()
       for (const terminal of terminalMapRef.current.values()) {
         terminal.dispose()
