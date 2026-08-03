@@ -198,6 +198,62 @@ const THEME_PREVIEWS: Record<
     accent: '#0097A7',
     text: '#0A1628',
   },
+  'atlas-blue': {
+    bg: '#050a12',
+    panel: '#0a1828',
+    border: '#19466b',
+    accent: '#50c8ff',
+    text: '#c8e8ff',
+  },
+  'atlas-blue-light': {
+    bg: '#edf8ff',
+    panel: '#f5fbff',
+    border: '#b6d8ed',
+    accent: '#147fb8',
+    text: '#10253a',
+  },
+  purple: {
+    bg: '#060818',
+    panel: '#10102e',
+    border: '#51398d',
+    accent: '#b48cff',
+    text: '#e4d4ff',
+  },
+  'purple-light': {
+    bg: '#f7f2ff',
+    panel: '#fbf8ff',
+    border: '#d4bee9',
+    accent: '#7c4dce',
+    text: '#281942',
+  },
+  'red-gold': {
+    bg: '#080604',
+    panel: '#1a1009',
+    border: '#744422',
+    accent: '#ffb347',
+    text: '#ffe8c8',
+  },
+  'red-gold-light': {
+    bg: '#fff6ed',
+    panel: '#fffaf5',
+    border: '#e8c39e',
+    accent: '#b85a13',
+    text: '#3b2110',
+  },
+  pink: {
+    bg: '#060810',
+    panel: '#17101f',
+    border: '#79324f',
+    accent: '#ff8cb8',
+    text: '#ffe8f2',
+  },
+  'pink-light': {
+    bg: '#fff4f8',
+    panel: '#fff9fb',
+    border: '#edbdd0',
+    accent: '#c84d80',
+    text: '#3a1727',
+  },
 }
 
 function WorkspaceThemePicker() {

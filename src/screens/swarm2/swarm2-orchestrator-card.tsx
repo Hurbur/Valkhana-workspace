@@ -138,7 +138,7 @@ export function Swarm2OrchestratorCard({
     id: agent.workerId,
     name: agent.workerName,
     modelId: agent.role,
-    status: agent.state === 'blocked' ? 'error' : agent.state === 'ready' ? 'done' : 'active',
+    status: agent.state === 'blocked' ? 'error' : agent.state === 'ready' ? 'ready' : 'active',
     lastLine: agent.task,
     lastAt: Date.now(),
     taskCount: agent.state === 'ready' ? 0 : 1,
