@@ -220,6 +220,33 @@ export function TerminalPanel({ isMobile }: TerminalPanelProps) {
         void handleSendInput(tabId, data)
       })
 
+      // Auto-copy any selection to the clipboard, like a native terminal.
+      // xterm renders its own selection overlay rather than a real DOM
+      // Selection, so `document.execCommand('copy')` has nothing to act on
+      // and silently no-ops -- use xterm's own selection text instead.
+      terminal.onSelectionChange(() => {
+        const selection = terminal.getSelection()
+        if (selection) {
+          void navigator.clipboard.writeText(selection).catch(() => undefined)
+        }
+      })
+
+      // Explicit Ctrl/Cmd+C copy when there's a selection; otherwise let the
+      // keystroke fall through to the shell as SIGINT as normal.
+      terminal.attachCustomKeyEventHandler((event) => {
+        if (event.type !== 'keydown') return true
+        const isCopyShortcut =
+          (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'c'
+        if (isCopyShortcut) {
+          const selection = terminal.getSelection()
+          if (selection) {
+            void navigator.clipboard.writeText(selection).catch(() => undefined)
+            return false
+          }
+        }
+        return true
+      })
+
       terminalMap.current.set(tabId, terminal)
       fitMap.current.set(tabId, fitAddon)
       searchMap.current.set(tabId, searchAddon)
@@ -541,9 +568,9 @@ function TerminalView({
         textarea?.focus()
       }}
       onKeyDown={(event) => {
-        if (event.key === 'c' && (event.metaKey || event.ctrlKey)) {
-          document.execCommand('copy')
-        }
+        // Copy is now handled inside initializeTerminal via xterm's own
+        // getSelection()/attachCustomKeyEventHandler -- document.execCommand
+        // had no real DOM selection to act on and silently did nothing.
         if (event.key === 'v' && (event.metaKey || event.ctrlKey)) {
           navigator.clipboard.readText().then((text) => {
             if (text) onInput(text)
