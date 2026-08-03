@@ -84,27 +84,57 @@ export function createTerminalSession(params: {
   const cols = params.cols ?? 80
   const rows = params.rows ?? 24
 
-  // Buffer early output before any listener registers
-  const earlyBuffer: Array<TerminalSessionEvent> = []
+  // Real scrollback replay, not just an early-buffer-until-first-listener.
+  // Previously this only buffered output emitted before the FIRST listener
+  // ever attached, then permanently stopped buffering -- so any listener
+  // reconnecting later (page reload, network drop, tab stall bringing the
+  // client back) got nothing of what was already on screen, only whatever
+  // new data happened to stream in after they reconnected. If the session
+  // was just idle at that moment, the client legitimately, correctly
+  // rendered blank -- not a rendering bug, a real gap in data replay.
+  //
+  // Keep a rolling buffer of the actual PTY output text (not discrete
+  // events -- concatenated text replays correctly regardless of how the
+  // original chunks were split) and replay it to ANY newly attaching
+  // listener, first or not.
+  const SCROLLBACK_MAX_CHARS = 200_000
+  let scrollback = ''
   let hasListeners = false
 
-  emitter.on('newListener', (eventName) => {
-    if (eventName === 'event' && !hasListeners) {
-      hasListeners = true
+  emitter.on('newListener', (eventName, listener) => {
+    if (eventName !== 'event') return
+    hasListeners = true
+    if (scrollback) {
+      const replay = scrollback
+      // Call the newly-attaching listener directly, NOT emitter.emit() --
+      // emit() broadcasts to every listener already attached to 'event',
+      // so if two tabs are already watching this session (a real case --
+      // Swarm2 can open multiple simultaneous panes on the same session),
+      // emit() would replay the scrollback into their terminals too and
+      // duplicate output that was already correctly on screen. The
+      // 'newListener' event hands us the exact listener function about to
+      // be registered, so call it directly to target only that one.
       process.nextTick(() => {
-        for (const evt of earlyBuffer) {
-          emitter.emit('event', evt)
-        }
-        earlyBuffer.length = 0
+        ;(listener as (evt: TerminalSessionEvent) => void)({
+          event: 'data',
+          payload: { data: replay },
+        })
       })
     }
   })
 
   const pushEvent = (evt: TerminalSessionEvent) => {
+    if (evt.event === 'data') {
+      const payload = evt.payload as { data?: unknown }
+      if (typeof payload?.data === 'string') {
+        scrollback += payload.data
+        if (scrollback.length > SCROLLBACK_MAX_CHARS) {
+          scrollback = scrollback.slice(-SCROLLBACK_MAX_CHARS)
+        }
+      }
+    }
     if (hasListeners) {
       emitter.emit('event', evt)
-    } else {
-      earlyBuffer.push(evt)
     }
   }
 
