@@ -22,7 +22,7 @@ vi.mock('../../../../server/valkhana-profile-store', () => ({
 
 import { Route } from './brain'
 
-const handler = (Route as {
+const handler = (Route as unknown as {
   server: { handlers: { POST: (context: { request: Request }) => Promise<Response> } }
 }).server.handlers.POST
 

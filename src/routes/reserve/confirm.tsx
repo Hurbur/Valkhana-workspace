@@ -4,12 +4,15 @@ import { usePageTitle } from '@/hooks/use-page-title'
 
 export const Route = createFileRoute('/reserve/confirm')({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>): { token?: string } => ({
+    token: typeof search.token === 'string' ? search.token : undefined,
+  }),
   component: ReserveConfirmRoute,
 })
 
 function ReserveConfirmRoute() {
   usePageTitle('Confirm HermesWorld reservation')
-  const token = Route.useSearch({ strict: false }).token || ''
+  const token = Route.useSearch().token || ''
   const [state, setState] = useState<{
     status: 'loading' | 'success' | 'error'
     message: string

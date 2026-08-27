@@ -6,12 +6,13 @@
     "prettier.config.js",
     "vite.config.ts"
   ],
+  "exclude": ["playground-ws-worker/**", "node_modules"],
 
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",
     "module": "ESNext",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["vite/client"],
 
     /* Bundler mode */

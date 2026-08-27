@@ -21,6 +21,16 @@ import { rateLimit, getClientIp, rateLimitResponse } from '../../../server/rate-
 import { unifiedSearch } from '../../../server/mcp-hub/index'
 import { Route } from './hub-search'
 
+type RouteWithHandlers = typeof Route & {
+  options: {
+    server: {
+      handlers: {
+        GET: (ctx: { request: Request }) => Promise<Response>
+      }
+    }
+  }
+}
+
 const mockIsAuthenticated = vi.mocked(isAuthenticated)
 const mockRateLimit = vi.mocked(rateLimit)
 const mockGetClientIp = vi.mocked(getClientIp)
@@ -33,7 +43,7 @@ function makeRequest(url: string): Request {
 
 async function callGet(url: string): Promise<Response> {
   const request = makeRequest(url)
-  const handler = Route.options.server?.handlers?.GET
+  const handler = (Route as RouteWithHandlers).options.server?.handlers?.GET
   if (!handler) throw new Error('No GET handler')
   return handler({ request } as Parameters<typeof handler>[0])
 }

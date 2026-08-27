@@ -69,7 +69,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
     select: (state) => state.location.pathname,
   })
   const search = useRouterState({
-    select: (state) => state.location.search,
+    select: (state) => state.location.search as Record<string, unknown>,
   })
   const isElectron = useMemo(
     () =>
