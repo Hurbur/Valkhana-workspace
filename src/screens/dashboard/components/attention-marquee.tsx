@@ -6,6 +6,7 @@ import type {
 
 const SOURCE_GLYPH: Record<DashboardIncident['source'], string> = {
   cron: '⏰',
+  kanban: '📋',
   platform: '🔌',
   log: '📜',
   config: '⚙️',
