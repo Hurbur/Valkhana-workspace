@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path'
 import { getProfilesDir } from './claude-paths'
 import { SWARM_MEMORY_ROOT } from './swarm-environment'
 import { appendSwarmMemoryEvent } from './swarm-memory'
-import type {ChildProcess} from 'node:child_process';
+import type {ChildProcess, ExecFileException} from 'node:child_process';
 
 export type SwarmContextState = 'healthy' | 'watch' | 'handoff_required' | 'renew_required'
 
@@ -377,8 +377,10 @@ export function lifecycleHandoffPath(workerId: string): string {
 
 function tmuxKill(workerId: string): Promise<{ ok: boolean; error?: string }> {
   const session = `swarm-${workerId}`
+  const bin = tmuxBin()
+  if (!bin) return Promise.resolve({ ok: false, error: 'tmux is unavailable on this platform' })
   return new Promise((resolve) => {
-    execFile(tmuxBin(), ['kill-session', '-t', session], (err, _out, stderr) => {
+    execFile(bin, ['kill-session', '-t', session], (err: ExecFileException | null, _out: string, stderr: string) => {
       if (err) return resolve({ ok: false, error: stderr?.toString() || err.message })
       resolve({ ok: true })
     })
@@ -389,8 +391,10 @@ function tmuxStart(workerId: string): Promise<{ ok: boolean; error?: string }> {
   const session = `swarm-${workerId}`
   const wrapper = join(homedir(), '.local', 'bin', workerId)
   if (!existsSync(wrapper)) return Promise.resolve({ ok: false, error: `Wrapper not found: ${wrapper}` })
+  const bin = tmuxBin()
+  if (!bin) return Promise.resolve({ ok: false, error: 'tmux is unavailable on this platform' })
   return new Promise((resolve) => {
-    execFile(tmuxBin(), ['new-session', '-d', '-s', session, wrapper], (err, _out, stderr) => {
+    execFile(bin, ['new-session', '-d', '-s', session, wrapper], (err: ExecFileException | null, _out: string, stderr: string) => {
       if (err) return resolve({ ok: false, error: stderr?.toString() || err.message })
       resolve({ ok: true })
     })

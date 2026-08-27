@@ -372,7 +372,13 @@ export async function fetchValkhanaActiveProfile(): Promise<ValkhanaActiveProfil
   const matchingProfile = profiles.find(
     (profile) => profile.id === active.id || profile.name === active.id,
   )
-  const path = matchingProfile?.path
+  if (!matchingProfile) {
+    throw new ValkhanaAdapterError(
+      `dashboard did not report a profile matching active identity ${active.id}`,
+      502,
+    )
+  }
+  const path = matchingProfile.path
   if (typeof path !== 'string' || path.length === 0) {
     throw new ValkhanaAdapterError(
       `dashboard did not provide a directory for active profile ${active.id}`,

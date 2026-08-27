@@ -636,9 +636,7 @@ function cleanSwarmLabel(rawValue: string, fallback = 'Ready for task', maxLengt
 }
 
 function displayTaskTitle(runtime: RuntimeEntry | undefined, fallback: string): string {
-  const realSummary = runtime?.lastRealSummary ?? null
-  const realResult = runtime?.lastRealResult ?? null
-  return cleanSwarmLabel(runtime?.blockedReason || runtime?.currentTask || realSummary || runtime?.lastSummary || realResult || runtime?.lastResult || fallback || '', 'Ready for task', 64)
+  return cleanSwarmLabel(runtime?.blockedReason || runtime?.currentTask || runtime?.lastSummary || runtime?.lastResult || fallback || '', 'Ready for task', 64)
 }
 
 
@@ -864,7 +862,7 @@ function ControlPlaneStage({
                       runtimeState={runtime?.state ?? null}
                       recentLines={recentLines(runtime)}
                       recentOutputAt={runtime?.lastOutputAt ?? runtime?.lastSessionStartedAt ?? null}
-                      recentSummary={runtime?.lastRealSummary ?? runtime?.lastRealResult ?? runtime?.lastSummary ?? runtime?.lastResult ?? runtime?.blockedReason ?? null}
+                      recentSummary={runtime?.lastSummary ?? runtime?.lastResult ?? runtime?.blockedReason ?? null}
                       artifacts={runtime?.artifacts ?? []}
                       previews={runtime?.previews ?? []}
                       inRoom={roomIds.includes(member.id)}
@@ -1430,7 +1428,7 @@ export function Swarm2Screen() {
       .map((member) => {
         const runtime = runtimeByWorker.get(member.id)
         const ts = runtime?.lastOutputAt ?? runtime?.lastSessionStartedAt ?? member.lastSessionAt ?? null
-        const rawText = runtime?.lastRealSummary ?? runtime?.lastRealResult ?? runtime?.lastSummary ?? runtime?.lastResult ?? runtime?.blockedReason ?? runtime?.currentTask ?? member.lastSessionTitle ?? `Ready in ${member.role || 'worker'} lane`
+        const rawText = runtime?.lastSummary ?? runtime?.lastResult ?? runtime?.blockedReason ?? runtime?.currentTask ?? member.lastSessionTitle ?? `Ready in ${member.role || 'worker'} lane`
         const state = (runtime?.phase || runtime?.currentTask || '').toLowerCase()
         const tone: 'idle' | 'active' | 'warning' = runtime?.blockedReason
           ? 'warning'

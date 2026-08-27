@@ -358,17 +358,24 @@ export function usePlaygroundRpg() {
       completedQuest = quest
       return completeQuestState(next, quest)
     })
-    if (completedQuest) {
-      pushToast('quest', 'Quest Complete', completedQuest.title)
-      pushToast('xp', '+ XP', `+${completedQuest.reward.xp} XP`)
-      if (completedQuest.reward.items?.length) {
-        for (const itemId of completedQuest.reward.items) {
+    // TS cannot see the mutation of completedQuest inside the setState updater
+    // closure above, so it flow-narrows the post-call read to the pre-call
+    // value (null) rather than the declared union. The assertion below
+    // restores the real (declared) type; the value itself is genuinely
+    // PlaygroundQuest | null at runtime, since setState's updater runs
+    // synchronously.
+    const finishedQuest = completedQuest as PlaygroundQuest | null
+    if (finishedQuest) {
+      pushToast('quest', 'Quest Complete', finishedQuest.title)
+      pushToast('xp', '+ XP', `+${finishedQuest.reward.xp} XP`)
+      if (finishedQuest.reward.items?.length) {
+        for (const itemId of finishedQuest.reward.items) {
           const item = itemById(itemId)
           if (item) pushToast('item', '+ Item', item.name)
         }
       }
-      if (completedQuest.reward.title) {
-        pushToast('title', 'Title Unlocked', completedQuest.reward.title)
+      if (finishedQuest.reward.title) {
+        pushToast('title', 'Title Unlocked', finishedQuest.reward.title)
       }
     }
   }, [pushToast])

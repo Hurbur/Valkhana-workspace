@@ -22,7 +22,7 @@ export type OfficeViewProps = {
   onNewMission?: () => void
   selectedOutputAgentId?: string
   activeTemplateName?: string
-  processType: 'sequential' | 'hierarchical' | 'parallel'
+  processType?: 'sequential' | 'hierarchical' | 'parallel'
   companyName?: string
   agentTasks?: Record<string, string>
   remoteSessions?: RemoteSession[]

@@ -79,11 +79,12 @@ export function PlaygroundDialog({
   if (!npcId) return null
   const npc = NPC_DIALOG[npcId]
   if (!npc) return null
+  const activeNpcId = npcId
 
   function handleChoice(c: DialogChoice) {
     setReply(c.reply)
     setShowLore(false)
-    onChoice?.(npcId, c.id)
+    onChoice?.(activeNpcId, c.id)
     if (c.completeQuest) onCompleteQuest(c.completeQuest)
     if (c.grantItems?.length) onGrantItems(c.grantItems)
     if (c.grantSkillXp) onGrantSkillXp(c.grantSkillXp)
