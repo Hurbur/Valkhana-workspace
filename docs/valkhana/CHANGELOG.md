@@ -2,6 +2,11 @@
 
 This records implementation changes on `architecture/valkhana-v1.3.3`. It is separate from the product release changelog until the migration is ready to land.
 
+## 2026-08-30 — Deployment target unavailable
+
+- Recorded that the former Azure ValKhana/Hermes VM has been sunsetted and its proposed AWS successor is neither implemented nor running.
+- Azure canary, rollback, and compatibility records remain historical evidence only. Deployment, live Hermes validation, promotion, recovery testing, and release handoff are blocked until a reviewed AWS target exists.
+
 ## 2026-08-30 — Live Hermes promotion deferred
 
 - The operator deferred further live Telegram/platform-health work and any Hermes v0.20.2 promotion. The qualified canary and rollback evidence are retained, but no production deployment action may resume without a newly authorized maintenance window.

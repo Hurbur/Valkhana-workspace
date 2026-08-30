@@ -55,6 +55,7 @@ The Rust core, supervised health API, Tauri command bridge, dashboard status sur
 - [x] Run `systemd-analyze --user security`; current exposure score is `2.0 OK`.
 - [~] Reduce the root TypeScript failure cascade: aligned the TanStack Start/Router version line and separated Cloudflare-worker checking. The worker typecheck passes; 70 explicit root application/test contract errors remain, so the release typecheck gate is still open.
 - [~] **Deferred by operator:** live Telegram/platform-health confirmation and any Hermes v0.20.2 promotion. Keep the verified rollback/canary evidence; do not touch the live deployment without a newly authorized maintenance window.
+- [ ] **Deployment environment unavailable:** the Azure VM used for prior ValKhana/Hermes evidence has been sunsetted. The intended AWS replacement is not implemented or running, so no live deployment, canary, promotion, recovery validation, or end-to-end Hermes verification may be claimed or attempted until a reviewed target exists.
 - [x] Add a Tauri 2 desktop target beside Electron.
 - [x] Add a bounded, typed Unix-socket client in `valkhana-api`.
 - [x] Expose `valkhana_core_health` through the Tauri command bridge.
@@ -152,7 +153,7 @@ The Rust core, supervised health API, Tauri command bridge, dashboard status sur
 - The new Rust CI workflow is present but cannot be observed until the branch is pushed or a PR is opened.
 - `valkhana-events` and `valkhana-state` now include a bounded metadata-only Core event projection. It deliberately clears on Core restart; the private policy SQLite ledger remains durable. Configurable/per-project retention, journald/SSE/export sinks, aggregation, and global control/transition enforcement remain later slices.
 - The server bundler emits existing `import.meta` and tree-shaking warnings; runtime SSR and embedded asset smoke tests pass despite them.
-- The Azure Hermes gateway is active for messaging integrations, but it does not expose the previously assumed unauthenticated HTTP health endpoint on port 8642. The read-only adapter therefore uses the exact deployed CLI by default and retains loopback HTTP only as an explicitly bounded fallback.
+- Historical Azure evidence: the former Azure Hermes gateway did not expose the previously assumed unauthenticated HTTP health endpoint on port 8642. The read-only adapter therefore uses the exact deployed CLI by default and retains loopback HTTP only as an explicitly bounded fallback. That VM is now sunsetted; this is not a current deployment capability.
 - Hermes Agent `v0.20.0` immediately promoted a newly created, unassigned canary card from `blocked` to `ready`; a typed `needs_input` block remained stable. No worker was spawned. Callers must verify post-mutation state instead of trusting the create response as durable lifecycle state.
 - The controlled worker canary dispatched correctly but its configured model call did not return before the two-minute cap. Hermes terminated it and blocked the card after the configured single attempt; successful completion is not yet proven.
 - Live v0.20.0 still has 19 dependency findings. The v0.20.2 candidate has zero findings, but its authorized promotion was rolled back because Telegram failed to initialize and then stalled connecting.
