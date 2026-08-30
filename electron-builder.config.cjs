@@ -41,6 +41,15 @@ module.exports = {
     target: ['portable', 'nsis'],
     executableName: 'hermes-workspace',
   },
+  linux: {
+    target: ['AppImage'],
+    extraResources: [
+      {
+        from: 'target/release/valkhana-electron-ssr-launcher',
+        to: 'valkhana-electron-ssr-launcher',
+      },
+    ],
+  },
   nsis: {
     oneClick: true,
     perMachine: false,

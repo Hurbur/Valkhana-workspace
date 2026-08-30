@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -77,5 +77,18 @@ describe('swarm-memory module', () => {
     const results = mod.searchSwarmMemory({ workerId: 'swarmtest1', query: 'rendezvous', scope: 'worker', limit: 5 })
     expect(results.length).toBeGreaterThan(0)
     expect(results[0].snippet).toMatch(/rendezvous/)
+  })
+
+  it('does not follow symlinks while reading or searching memory', async () => {
+    const mod = await loadModule()
+    mod.ensureWorkerMemoryScaffold({ workerId: 'swarmtest1' })
+    const root = mod.swarmWorkerMemoryRoot('swarmtest1')
+    const outside = join(tempHome, 'outside-secret.md')
+    writeFileSync(outside, 'must not be disclosed: secret-token', 'utf8')
+    symlinkSync(outside, join(root, 'leaked.md'))
+
+    const read = mod.readSwarmMemory({ workerId: 'swarmtest1', kind: 'profile' })
+    expect(read.files.some((file: { name: string }) => file.name === 'leaked.md')).toBe(false)
+    expect(mod.searchSwarmMemory({ workerId: 'swarmtest1', query: 'secret-token' })).toEqual([])
   })
 })

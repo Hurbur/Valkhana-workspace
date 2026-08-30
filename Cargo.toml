@@ -1,0 +1,41 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/valkhana-config",
+  "crates/valkhana-core",
+  "crates/valkhana-domain",
+  "crates/valkhana-events",
+  "crates/valkhana-hermes",
+  "crates/valkhana-api",
+  "crates/valkhana-state",
+  "crates/valkhana-policy",
+  "crates/valkhana-components",
+  "crates/valkhana-secrets",
+  "src-tauri",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+rust-version = "1.88"
+
+[workspace.dependencies]
+anyhow = "1"
+axum = "0.8"
+fs2 = "0.4"
+getrandom = "0.3"
+hex = "0.4"
+hmac = "0.12"
+rusqlite = { version = "0.40.1", features = ["bundled"] }
+sd-notify = "0.5"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+secret-service = { version = "5.1.0", features = ["rt-async-io-crypto-rust"] }
+sha2 = "0.10"
+subtle = "2.6.1"
+tokio = { version = "1", features = ["io-util", "macros", "net", "process", "rt-multi-thread", "signal", "time"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+url = "2"
+zeroize = "1.8.2"

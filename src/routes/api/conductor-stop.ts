@@ -4,8 +4,6 @@ import { isAuthenticated } from '../../server/auth-middleware'
 import { requireJsonContentType } from '../../server/rate-limit'
 import { deleteSession } from '../../server/claude-api'
 import { dashboardFetch, ensureGatewayProbed } from '../../server/gateway-capabilities'
-import { cancelSwarmMission } from '../../server/swarm-missions'
-import { resetSwarmWorkerRuntime } from '../../server/swarm-runtime-reset'
 
 export const Route = createFileRoute('/api/conductor-stop')({
   server: {
@@ -34,33 +32,8 @@ export const Route = createFileRoute('/api/conductor-stop')({
 
           let deleted = 0
           let stoppedMissions = 0
-          let cancelledNativeMissions = 0
           const capabilities = await ensureGatewayProbed()
           for (const missionId of missionIds) {
-            try {
-              const cancelled = cancelSwarmMission({
-                missionId,
-                actor: 'conductor-stop',
-                reason: 'Conductor mission stopped by user',
-              })
-              if (cancelled) {
-                cancelledNativeMissions += 1
-                for (const workerId of Array.from(new Set(cancelled.mission.assignments.map((assignment) => assignment.workerId)))) {
-                  try {
-                    resetSwarmWorkerRuntime(workerId, {
-                      actor: 'conductor-stop',
-                      reason: `Cancelled native Conductor mission ${missionId}`,
-                    })
-                  } catch {
-                    // Runtime reset is best-effort; cancellation state is still durable.
-                  }
-                }
-                continue
-              }
-            } catch {
-              // Fall through to dashboard cleanup.
-            }
-
             if (capabilities.dashboard.available && capabilities.conductor) {
               try {
                 const res = await dashboardFetch(
@@ -83,7 +56,7 @@ export const Route = createFileRoute('/api/conductor-stop')({
             }
           }
 
-          return json({ ok: true, deleted, stoppedMissions, cancelledNativeMissions })
+          return json({ ok: true, deleted, stoppedMissions, cancelledNativeMissions: 0 })
         } catch (error) {
           return json(
             {

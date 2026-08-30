@@ -33,6 +33,9 @@ async function loadBackend(options?: {
   }))
 
   vi.doMock('./kanban-backend', () => ({
+    KanbanAdapterError: class KanbanAdapterError extends Error {
+      constructor(message: string, public status = 409) { super(message) }
+    },
     listKanbanCards,
     createKanbanCard,
     updateKanbanCard,
@@ -76,25 +79,37 @@ describe('claude-tasks-backend', () => {
     })
   })
 
-  it('creates tasks in the shared kanban backend instead of tasks.json', async () => {
+  it('creates safe triage tasks through the Core-backed adapter', async () => {
     const { mod, createKanbanCard } = await loadBackend()
 
     const task = await mod.createClaudeTask({
       title: 'Wire workspace board to shared kanban',
       description: 'Proxy through Agent API',
-      column: 'todo',
-      assignee: 'swarm3',
+      column: 'backlog',
       created_by: 'user',
+      idempotency_key: 'claude-task-1',
     })
 
     expect(createKanbanCard).toHaveBeenCalledWith(expect.objectContaining({
       title: 'Wire workspace board to shared kanban',
       spec: 'Proxy through Agent API',
-      assignedWorker: 'swarm3',
-      status: 'ready',
+      assignedWorker: null,
+      status: 'backlog',
       createdBy: 'user',
+      idempotencyKey: 'claude-task-1',
     }))
-    expect(task).toMatchObject({ id: 'card-created', column: 'todo', assignee: 'swarm3' })
+    expect(task).toMatchObject({ id: 'card-created', column: 'backlog', assignee: null })
+  })
+
+  it('rejects legacy assignment and promotion instead of silently dropping them', async () => {
+    const { mod, createKanbanCard } = await loadBackend()
+    await expect(mod.createClaudeTask({
+      title: 'Unsafe task',
+      column: 'todo',
+      assignee: 'swarm3',
+      idempotency_key: 'unsafe-1',
+    })).rejects.toThrow('Only unassigned medium-priority backlog admission')
+    expect(createKanbanCard).not.toHaveBeenCalled()
   })
 
   it('moves running and blocked cards through kanban status updates', async () => {

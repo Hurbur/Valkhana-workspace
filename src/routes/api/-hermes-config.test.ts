@@ -145,6 +145,14 @@ describe('canonical /api/hermes-config route', () => {
     })
     expect(res.status).toBe(503)
     vi.doUnmock('../../server/gateway-capabilities')
+    // `doMock` is module-scoped until the module cache is reset; otherwise
+    // the following legacy-alias test observes the unavailable-capability
+    // fixture and receives an empty provider list.
+    vi.resetModules()
+    vi.doMock('../../server/gateway-capabilities', () => ({
+      ensureGatewayProbed: vi.fn(),
+      getCapabilities: () => ({ config: true }),
+    }))
   })
 })
 

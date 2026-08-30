@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { isAuthenticated } from '../../server/auth-middleware'
 import { createClaudeTask, listClaudeTasks } from '../../server/claude-tasks-backend'
 import type { TaskColumn, TaskPriority } from '../../server/claude-tasks-backend'
+import { KanbanAdapterError } from '../../server/kanban-backend'
+import { ValkhanaCoreError } from '../../server/valkhana-core-client'
 
 function jsonResponse(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -25,6 +27,13 @@ function isTaskPriority(value: unknown): value is TaskPriority {
   return value === 'high' || value === 'medium' || value === 'low'
 }
 
+function adapterError(error: unknown) {
+  if (error instanceof KanbanAdapterError || error instanceof ValkhanaCoreError) {
+    return jsonResponse({ error: error.message }, error.status)
+  }
+  return jsonResponse({ error: 'ValKhana Core task adapter failed' }, 502)
+}
+
 export const Route = createFileRoute('/api/claude-tasks')({
   server: {
     handlers: {
@@ -33,15 +42,18 @@ export const Route = createFileRoute('/api/claude-tasks')({
           return jsonResponse({ error: 'Unauthorized' }, 401)
         }
 
-        const url = new URL(request.url)
-        const tasks = await listClaudeTasks({
-          column: url.searchParams.get('column'),
-          assignee: url.searchParams.get('assignee'),
-          priority: url.searchParams.get('priority'),
-          includeDone: url.searchParams.get('include_done') === 'true',
-        })
-
-        return jsonResponse({ tasks })
+        try {
+          const url = new URL(request.url)
+          const tasks = await listClaudeTasks({
+            column: url.searchParams.get('column'),
+            assignee: url.searchParams.get('assignee'),
+            priority: url.searchParams.get('priority'),
+            includeDone: url.searchParams.get('include_done') === 'true',
+          })
+          return jsonResponse({ tasks })
+        } catch (error) {
+          return adapterError(error)
+        }
       },
 
       POST: async ({ request }) => {
@@ -64,11 +76,13 @@ export const Route = createFileRoute('/api/claude-tasks')({
             tags: Array.isArray(body.tags) ? body.tags.filter((tag): tag is string => typeof tag === 'string') : [],
             due_date: typeof body.due_date === 'string' ? body.due_date : null,
             created_by: typeof body.created_by === 'string' ? body.created_by : 'user',
+            idempotency_key: typeof body.idempotency_key === 'string' ? body.idempotency_key : undefined,
           })
 
           return jsonResponse({ task }, 201)
-        } catch {
-          return jsonResponse({ error: 'Invalid request body' }, 400)
+        } catch (error) {
+          if (error instanceof SyntaxError) return jsonResponse({ error: 'Invalid request body' }, 400)
+          return adapterError(error)
         }
       },
     },

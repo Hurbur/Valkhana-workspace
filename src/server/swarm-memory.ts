@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, writeFileSync } from 'node:fs'
+import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 import YAML from 'yaml'
@@ -339,6 +339,11 @@ function listFiles(root: string, maxDepth = 2): Array<string> {
     if (depth > maxDepth) return
     for (const name of readdirSync(dir)) {
       const path = join(dir, name)
+      // Never follow links while traversing authenticated memory content.
+      // A symlink beneath the configured root could otherwise disclose an
+      // arbitrary file despite the lexical `assertInside` check.
+      const link = lstatSync(path)
+      if (link.isSymbolicLink()) continue
       const st = statSync(path)
       if (st.isDirectory()) {
         walk(path, depth + 1)

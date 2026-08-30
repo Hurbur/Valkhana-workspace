@@ -1,0 +1,9 @@
+schema_version: 1
+
+# One ValKhana project maps deterministically to one authoritative Hermes board.
+# Repository paths are host-local and must be absolute.
+project:
+  id: valkhana
+  hermes_board: valkhana
+  repo: /absolute/path/to/Valkhana-workspace
+  default_workspace: worktree

@@ -287,14 +287,26 @@ function startLocalServer() {
       return
     }
 
+    const serverEntry = join(__dirname, 'prod-server.cjs')
+    const packagedLauncher = join(
+      process.resourcesPath,
+      'valkhana-electron-ssr-launcher',
+    )
+    const useSecretLauncher =
+      process.platform === 'linux' && app.isPackaged && existsSync(packagedLauncher)
+    const executable = useSecretLauncher ? packagedLauncher : process.execPath
+    const args = useSecretLauncher
+      ? [process.execPath, serverEntry, '--port', String(APP_PORT)]
+      : [serverEntry, '--port', String(APP_PORT)]
+
     localServer = spawn(
-      process.execPath,
-      [join(__dirname, 'prod-server.cjs'), '--port', String(APP_PORT)],
+      executable,
+      args,
       {
         cwd: join(__dirname, '..'),
         env: {
           ...process.env,
-          ELECTRON_RUN_AS_NODE: '1',
+          ...(useSecretLauncher ? {} : { ELECTRON_RUN_AS_NODE: '1' }),
           NODE_ENV: 'production',
           PORT: String(APP_PORT),
           HERMES_WORKSPACE_DESKTOP: '1',

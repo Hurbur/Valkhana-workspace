@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { isAuthenticated } from '../../server/auth-middleware'
 import { getClaudeTask, moveClaudeTask, updateClaudeTask } from '../../server/claude-tasks-backend'
 import type { TaskColumn, TaskPriority } from '../../server/claude-tasks-backend'
+import { KanbanAdapterError } from '../../server/kanban-backend'
+import { ValkhanaCoreError } from '../../server/valkhana-core-client'
 
 function jsonResponse(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -25,6 +27,13 @@ function isTaskPriority(value: unknown): value is TaskPriority {
   return value === 'high' || value === 'medium' || value === 'low'
 }
 
+function adapterError(error: unknown) {
+  if (error instanceof KanbanAdapterError || error instanceof ValkhanaCoreError) {
+    return jsonResponse({ error: error.message }, error.status)
+  }
+  return jsonResponse({ error: 'ValKhana Core task adapter failed' }, 502)
+}
+
 export const Route = createFileRoute('/api/claude-tasks/$taskId')({
   server: {
     handlers: {
@@ -33,9 +42,13 @@ export const Route = createFileRoute('/api/claude-tasks/$taskId')({
           return jsonResponse({ error: 'Unauthorized' }, 401)
         }
 
-        const task = await getClaudeTask(params.taskId)
-        if (!task) return jsonResponse({ error: 'Task not found' }, 404)
-        return jsonResponse({ task })
+        try {
+          const task = await getClaudeTask(params.taskId)
+          if (!task) return jsonResponse({ error: 'Task not found' }, 404)
+          return jsonResponse({ task })
+        } catch (error) {
+          return adapterError(error)
+        }
       },
 
       PATCH: async ({ request, params }) => {
@@ -57,8 +70,9 @@ export const Route = createFileRoute('/api/claude-tasks/$taskId')({
 
           if (!task) return jsonResponse({ error: 'Task not found' }, 404)
           return jsonResponse({ task })
-        } catch {
-          return jsonResponse({ error: 'Invalid request body' }, 400)
+        } catch (error) {
+          if (error instanceof SyntaxError) return jsonResponse({ error: 'Invalid request body' }, 400)
+          return adapterError(error)
         }
       },
 
@@ -89,8 +103,9 @@ export const Route = createFileRoute('/api/claude-tasks/$taskId')({
           const task = await moveClaudeTask(params.taskId, body.column)
           if (!task) return jsonResponse({ error: 'Task not found' }, 404)
           return jsonResponse({ task })
-        } catch {
-          return jsonResponse({ error: 'Invalid request body' }, 400)
+        } catch (error) {
+          if (error instanceof SyntaxError) return jsonResponse({ error: 'Invalid request body' }, 400)
+          return adapterError(error)
         }
       },
     },

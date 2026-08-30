@@ -34,7 +34,7 @@ type KanbanWorker = {
 }
 
 type KanbanBackendMeta = {
-  id: 'local' | 'claude' | 'hermes-proxy'
+  id: 'local' | 'claude' | 'hermes-proxy' | 'valkhana-core'
   label: string
   detected: boolean
   writable: boolean
@@ -86,7 +86,7 @@ export function getKanbanBackendPresentation(backend: KanbanBackendMeta | null |
       title: undefined,
     }
   }
-  if (backend.id === 'hermes-proxy' && backend.detected) {
+  if ((backend.id === 'hermes-proxy' || backend.id === 'valkhana-core') && backend.detected) {
     // Backend.path is the dashboard origin. Do not deep-link to loopback
     // origins (127.0.0.1/localhost): in a remote browser that points at the
     // user's own device, not the VPS. The board still syncs via Workspace's
@@ -98,11 +98,13 @@ export function getKanbanBackendPresentation(backend: KanbanBackendMeta | null |
         ? `${backend.path.replace(/\/+$/, '')}/kanban`
         : undefined
     return {
-      badgeLabel: 'Synced • Hermes',
+      badgeLabel: backend.id === 'valkhana-core' ? 'Core • Hermes' : 'Synced • Hermes',
       badgeTone: 'hermes-proxy',
-      toastTitle: 'Synced with Hermes Dashboard',
+      toastTitle: backend.id === 'valkhana-core' ? 'Connected through ValKhana Core' : 'Synced with Hermes Dashboard',
       toastBody:
-        'Cards and status changes round-trip through the Hermes Dashboard kanban plugin. Single source of truth, dispatcher-aware.',
+        backend.id === 'valkhana-core'
+          ? 'Hermes is the single task authority. ValKhana Core exposes only supported admission and lifecycle operations.'
+          : 'Cards and status changes round-trip through the Hermes Dashboard kanban plugin. Single source of truth, dispatcher-aware.',
       title:
         backend.details ??
         backend.path ??
@@ -169,7 +171,9 @@ async function createKanbanCard(input: {
   const res = await fetch('/api/swarm-kanban', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
+    // The server requires an idempotent admission token and Hermes keeps it
+    // stable across retries of this exact request.
+    body: JSON.stringify({ ...input, idempotencyKey: crypto.randomUUID() }),
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok || data?.ok === false) throw new Error(data?.error || `Kanban create failed: ${res.status}`)

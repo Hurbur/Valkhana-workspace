@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import * as yaml from 'yaml'
 import { z } from 'zod'
@@ -127,29 +127,6 @@ export function readSwarmRoster(ids: Array<string> = []): SwarmRoster {
     console.error(`[swarm-roster] Failed to read/parse ${SWARM_ROSTER_PATH}, falling back to default roster:`, err)
     return fallbackRoster(ids)
   }
-}
-
-export function writeSwarmRoster(roster: SwarmRoster): void {
-  const parsed = SwarmRosterSchema.parse(roster)
-  const doc = yaml.stringify(parsed, { lineWidth: 0 })
-  writeFileSync(SWARM_ROSTER_PATH, doc)
-}
-
-export function upsertSwarmRosterWorker(input: SwarmRosterUpsert, ids: Array<string> = []): SwarmRoster {
-  const nextWorker = SwarmRosterUpsertSchema.parse(input)
-  const current = readSwarmRoster(ids)
-  const byId = new Map(current.workers.map((worker) => [worker.id, worker]))
-  byId.set(nextWorker.id, nextWorker)
-  const next: SwarmRoster = {
-    version: current.version || 1,
-    workers: [...byId.values()].sort((a, b) => {
-      const na = parseInt(a.id.replace(/\D/g, ''), 10) || 0
-      const nb = parseInt(b.id.replace(/\D/g, ''), 10) || 0
-      return na - nb
-    }),
-  }
-  writeSwarmRoster(next)
-  return next
 }
 
 export function rosterByWorkerId(ids: Array<string> = []): Map<string, SwarmRosterWorker> {

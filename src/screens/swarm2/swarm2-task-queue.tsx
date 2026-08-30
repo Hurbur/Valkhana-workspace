@@ -60,6 +60,7 @@ async function createWorkerTask(workerId: string, title: string, description = '
       column: 'todo',
       priority: 'medium',
       created_by: 'swarm2-card',
+      idempotency_key: crypto.randomUUID(),
     }),
   })
   if (!res.ok) {

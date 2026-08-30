@@ -1,5 +1,6 @@
 import {
   createKanbanCard,
+  KanbanAdapterError,
   listKanbanCards,
   type KanbanBackendMeta,
   getKanbanBackendMeta,
@@ -40,6 +41,7 @@ type CreateTaskInput = {
   tags?: string[]
   due_date?: string | null
   created_by?: string
+  idempotency_key?: string
 }
 
 type UpdateTaskInput = Partial<Omit<CreateTaskInput, 'created_by'>>
@@ -138,17 +140,38 @@ export async function getClaudeTask(taskId: string): Promise<ClaudeTaskRecord | 
 }
 
 export async function createClaudeTask(input: CreateTaskInput): Promise<ClaudeTaskRecord> {
+  if (
+    (input.column !== undefined && input.column !== 'backlog') ||
+    (input.priority !== undefined && input.priority !== 'medium') ||
+    input.assignee != null ||
+    Boolean(input.tags?.length) ||
+    input.due_date != null
+  ) {
+    throw new KanbanAdapterError(
+      'Only unassigned medium-priority backlog admission is supported through Hermes',
+    )
+  }
   const card = await createKanbanCard({
     title: input.title,
     spec: input.description ?? '',
     assignedWorker: input.assignee ?? null,
     status: mapTaskColumnToKanbanStatus(input.column ?? 'backlog'),
     createdBy: input.created_by ?? 'user',
+    idempotencyKey: input.idempotency_key,
   })
   return mapCardToTask(card)
 }
 
 export async function updateClaudeTask(taskId: string, updates: UpdateTaskInput): Promise<ClaudeTaskRecord | null> {
+  if (
+    updates.priority !== undefined ||
+    updates.tags !== undefined ||
+    updates.due_date !== undefined
+  ) {
+    throw new KanbanAdapterError(
+      'Priority, tag, and due-date edits are not supported by the current Hermes contract',
+    )
+  }
   const card = await updateKanbanCard(taskId, {
     title: typeof updates.title === 'string' ? updates.title : undefined,
     spec: typeof updates.description === 'string' ? updates.description : undefined,

@@ -1,0 +1,36 @@
+[Unit]
+Description=ValKhana Auxiliary World Model - Qwen AgentWorld 35B-A3B
+
+[Service]
+Type=simple
+
+ExecStart=/usr/bin/llama-server \
+    -m /mnt/linux-data/AI/models/valkhana-world-models/qwen-agentworld-35b-a3b/Qwen-AgentWorld-35B-A3B-APEX-I-Compact.gguf \
+    --alias valkhana-agentworld-35b-a3b \
+    --host 127.0.0.1 \
+    --port 8080 \
+    -c 114688 \
+    -np 1 \
+    -ngl 999 \
+    -ot 'blk[.](33|34|35|36|37|38|39)[.]ffn_(down|gate|up)_exps[.]weight=CPU' \
+    --fit off \
+    --load-mode none \
+    -t 4 \
+    -tb 4 \
+    -b 512 \
+    -ub 512 \
+    --cache-type-k q8_0 \
+    --cache-type-v q8_0 \
+    --flash-attn on \
+    --jinja \
+    --reasoning auto \
+    --no-context-shift \
+    --metrics
+
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGINT
+
+[Install]
+WantedBy=default.target

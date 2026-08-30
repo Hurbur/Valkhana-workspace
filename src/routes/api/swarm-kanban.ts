@@ -1,8 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { z } from 'zod'
-import { createKanbanCard, getKanbanBackendMeta, listKanbanCards, updateKanbanCard } from '../../server/kanban-backend'
+import { createKanbanCard, getKanbanBackendMeta, KanbanAdapterError, listKanbanCards, updateKanbanCard } from '../../server/kanban-backend'
 import { isAuthenticated } from '../../server/auth-middleware'
+import { ValkhanaCoreError } from '../../server/valkhana-core-client'
+
+function adapterError(error: unknown) {
+  if (error instanceof KanbanAdapterError || error instanceof ValkhanaCoreError) {
+    return json({ ok: false, error: error.message }, { status: error.status })
+  }
+  return json({ ok: false, error: 'ValKhana Core Kanban adapter failed' }, { status: 502 })
+}
 
 const AcceptanceCriteriaSchema = z.preprocess(
   (value) => {
@@ -63,11 +71,15 @@ export const Route = createFileRoute('/api/swarm-kanban')({
         if (!isAuthenticated(request)) {
           return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
         }
-        return json({
-          ok: true,
-          cards: await listKanbanCards(),
-          backend: getKanbanBackendMeta(),
-        })
+        try {
+          return json({
+            ok: true,
+            cards: await listKanbanCards(),
+            backend: getKanbanBackendMeta(),
+          })
+        } catch (error) {
+          return adapterError(error)
+        }
       },
       POST: async ({ request }) => {
         if (!isAuthenticated(request)) {
@@ -84,21 +96,25 @@ export const Route = createFileRoute('/api/swarm-kanban')({
           return json({ ok: false, error: parsed.error.issues.map((issue) => issue.message).join('; ') }, { status: 400 })
         }
         const data = parsed.data
-        const card = await createKanbanCard({
-          title: data.title,
-          spec: data.spec,
-          acceptanceCriteria: data.acceptanceCriteria,
-          assignedWorker: data.assignedWorker,
-          reviewer: data.reviewer,
-          status: data.status,
-          missionId: data.missionId,
-          reportPath: data.reportPath,
-          createdBy: data.createdBy,
-          parents: data.parents,
-          tags: data.tags,
-          idempotencyKey: data.idempotencyKey,
-        })
-        return json({ ok: true, card, backend: getKanbanBackendMeta() })
+        try {
+          const card = await createKanbanCard({
+            title: data.title,
+            spec: data.spec,
+            acceptanceCriteria: data.acceptanceCriteria,
+            assignedWorker: data.assignedWorker,
+            reviewer: data.reviewer,
+            status: data.status,
+            missionId: data.missionId,
+            reportPath: data.reportPath,
+            createdBy: data.createdBy,
+            parents: data.parents,
+            tags: data.tags,
+            idempotencyKey: data.idempotencyKey,
+          })
+          return json({ ok: true, card, backend: getKanbanBackendMeta() }, { status: 201 })
+        } catch (error) {
+          return adapterError(error)
+        }
       },
       PATCH: async ({ request }) => {
         if (!isAuthenticated(request)) {
@@ -115,9 +131,13 @@ export const Route = createFileRoute('/api/swarm-kanban')({
           return json({ ok: false, error: parsed.error.issues.map((issue) => issue.message).join('; ') }, { status: 400 })
         }
         const { id, ...updates } = parsed.data
-        const card = await updateKanbanCard(id, updates)
-        if (!card) return json({ ok: false, error: 'Card not found' }, { status: 404 })
-        return json({ ok: true, card, backend: getKanbanBackendMeta() })
+        try {
+          const card = await updateKanbanCard(id, updates)
+          if (!card) return json({ ok: false, error: 'Card not found' }, { status: 404 })
+          return json({ ok: true, card, backend: getKanbanBackendMeta() })
+        } catch (error) {
+          return adapterError(error)
+        }
       },
     },
   },

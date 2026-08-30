@@ -6,6 +6,7 @@ const portArg = process.argv.find(
   (value, index, arr) => arr[index - 1] === '--port',
 )
 const PORT = Number.parseInt(process.env.PORT || portArg || '3847', 10)
+const DESKTOP_TOKEN = process.env.VALKHANA_DESKTOP_TOKEN || ''
 const DIST_CLIENT = path.join(__dirname, '..', 'dist', 'client')
 const BUNDLED_SERVER = path.join(__dirname, 'server-bundle.cjs')
 const UNBUNDLED_SERVER = path.join(
@@ -57,6 +58,43 @@ async function main() {
   const server = http.createServer(async (req, res) => {
     const url = req.url || '/'
     const pathname = url.split('?')[0]
+    const parsedUrl = new URL(url, `http://127.0.0.1:${PORT}`)
+
+    if (pathname === '/__valkhana_desktop_ready') {
+      if (
+        DESKTOP_TOKEN &&
+        req.headers['x-valkhana-desktop-token'] === DESKTOP_TOKEN
+      ) {
+        res.writeHead(200, {
+          'Content-Type': 'text/plain',
+          'Cache-Control': 'no-store',
+        })
+        res.end(DESKTOP_TOKEN)
+      } else {
+        res.writeHead(403, { 'Content-Type': 'text/plain' })
+        res.end('Forbidden')
+      }
+      return
+    }
+
+    let establishDesktopSession = false
+    if (DESKTOP_TOKEN) {
+      const cookieToken = (req.headers.cookie || '')
+        .split(';')
+        .map((part) => part.trim())
+        .find((part) => part.startsWith('valkhana_desktop_token='))
+        ?.slice('valkhana_desktop_token='.length)
+      establishDesktopSession =
+        pathname === '/' && parsedUrl.searchParams.get('token') === DESKTOP_TOKEN
+      if (!establishDesktopSession && cookieToken !== DESKTOP_TOKEN) {
+        res.writeHead(403, {
+          'Content-Type': 'text/plain',
+          'Cache-Control': 'no-store',
+        })
+        res.end('Forbidden')
+        return
+      }
+    }
 
     if (pathname !== '/' && !pathname.startsWith('/api/')) {
       const filePath = path.join(DIST_CLIENT, pathname)
@@ -102,6 +140,11 @@ async function main() {
       webResponse.headers.forEach((value, key) => {
         resHeaders[key] = value
       })
+      if (establishDesktopSession) {
+        resHeaders['set-cookie'] =
+          `valkhana_desktop_token=${DESKTOP_TOKEN}; HttpOnly; SameSite=Strict; Path=/`
+        resHeaders['cache-control'] = 'no-store'
+      }
       res.writeHead(
         webResponse.status,
         webResponse.statusText || '',

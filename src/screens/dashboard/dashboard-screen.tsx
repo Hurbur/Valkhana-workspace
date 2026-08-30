@@ -42,6 +42,7 @@ import { SkillsUsageCard } from './components/skills-usage-card'
 import { TokenMixHourCard } from './components/token-mix-hour-card'
 import { TopModelsCard } from './components/top-models-card'
 import { VelocityCard } from './components/velocity-card'
+import { ValKhanaCoreStatus } from './components/valkhana-core-status'
 import { WidgetShell } from './components/widget-shell'
 import { normalizeDashboardSessionsPayload } from './lib/sessions-query'
 import { useDashboardLayout } from './lib/use-dashboard-layout'
@@ -1031,6 +1032,8 @@ export function DashboardScreen() {
       {(overview?.incidents.length ?? 0) > 0 ? (
         <AttentionMarquee overview={overview ?? null} />
       ) : null}
+
+      <ValKhanaCoreStatus />
 
       {/* ── Ops strip (gateway + version drift + platforms + cron pulse). ── */}
       <OpsStrip

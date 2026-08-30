@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { SwarmRosterSchema, SwarmRosterUpsertSchema, isSwarmWorkerId } from './swarm-roster'
 
 describe('swarm roster semantic workers', () => {
-  it('accepts both legacy swarm ids and semantic profile ids for upsert', () => {
+  it('accepts both legacy swarm ids and semantic profile ids in configuration', () => {
     const baseWorker = {
       name: 'Builder',
       role: 'Builder',

@@ -1,22 +1,12 @@
 /**
- * Tasks API client with automatic backend detection.
- *
- * Two backend routes exist for task storage:
- *   /api/hermes-tasks  — flat-file store at ~/.hermes/tasks.json (used by agents/cron)
- *   /api/claude-tasks  — kanban-backend abstraction (local JSON, or Hermes Dashboard proxy)
- *
- * On first fetch this module probes both in parallel and selects the backend that has
- * data. If both have data, hermes-tasks wins (it is the canonical agent task store).
- * The decision is cached for the page session so subsequent calls never re-probe.
- *
- * All mutations (create, update, move, delete, launch) route through the same resolved
- * backend so reads and writes are always consistent.
+ * Tasks API client. Task lifecycle is always backed by ValKhana Core's typed Hermes
+ * adapter; the former local/Claude fallback is intentionally not probed because it
+ * would reintroduce split authority.
  */
 
 const HERMES_BASE = '/api/hermes-tasks'
-const CLAUDE_BASE = '/api/claude-tasks'
 
-export type TasksBackend = 'hermes' | 'claude'
+export type TasksBackend = 'hermes'
 
 // --- Backend resolution -------------------------------------------------
 
@@ -27,46 +17,17 @@ type BackendResolution = {
 }
 
 let _resolved: BackendResolution | null = null
-let _resolving: Promise<BackendResolution> | null = null
-
-async function probeBackend(base: string): Promise<number> {
-  try {
-    const res = await fetch(base, { signal: AbortSignal.timeout(3000) })
-    if (!res.ok) return 0
-    // Guard against HTML catch-all responses (route not found returns 200 HTML)
-    const contentType = res.headers.get('content-type') ?? ''
-    if (!contentType.includes('application/json')) return -1
-    const data = await res.json()
-    return Array.isArray(data.tasks) ? data.tasks.length : 0
-  } catch {
-    return 0
-  }
-}
 
 async function resolveBackend(): Promise<BackendResolution> {
   if (_resolved) return _resolved
-  if (_resolving) return _resolving
-
-  _resolving = (async () => {
-    const [hermesCount, claudeCount] = await Promise.all([
-      probeBackend(HERMES_BASE),
-      probeBackend(CLAUDE_BASE),
-    ])
-
-    // Prefer hermes if it has real data (> 0); fall back to claude if hermes is
-    // missing (returns -1 for non-JSON / route-not-found) or empty.
-    // Default to claude when both are empty — it is the active backend after the
-    // hermes-tasks → claude-tasks route rename (commit efcb7d14).
-    const useHermes = hermesCount > 0 && hermesCount >= claudeCount
-    _resolved = {
-      base: useHermes ? HERMES_BASE : CLAUDE_BASE,
-      assigneesBase: useHermes ? '/api/hermes-tasks-assignees' : '/api/claude-tasks-assignees',
-      backend: useHermes ? 'hermes' : 'claude',
-    }
-    return _resolved
-  })()
-
-  return _resolving
+  _resolved = {
+    base: HERMES_BASE,
+    // Profile discovery is read-only; task assignment remains disabled until its
+    // policy-gated Hermes command is implemented.
+    assigneesBase: '/api/claude-tasks-assignees',
+    backend: 'hermes',
+  }
+  return _resolved
 }
 
 /** Returns the currently resolved backend id, or null if not yet probed. */
@@ -77,7 +38,6 @@ export function getActiveBackend(): TasksBackend | null {
 /** Force a fresh re-probe on the next fetchTasks() call (e.g. after backend config changes). */
 export function resetBackendResolution(): void {
   _resolved = null
-  _resolving = null
 }
 
 // --- Types --------------------------------------------------------------
@@ -110,6 +70,7 @@ export type CreateTaskInput = {
   tags?: Array<string>
   due_date?: string | null
   created_by?: string
+  idempotency_key?: string
 }
 
 export type UpdateTaskInput = Partial<Omit<CreateTaskInput, 'created_by'>>
@@ -158,7 +119,10 @@ export async function createTask(input: CreateTaskInput): Promise<ClaudeTask> {
   const res = await fetch(base, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
+    body: JSON.stringify({
+      ...input,
+      idempotency_key: input.idempotency_key ?? crypto.randomUUID(),
+    }),
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))

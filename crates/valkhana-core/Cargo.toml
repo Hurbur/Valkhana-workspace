@@ -1,0 +1,31 @@
+[package]
+name = "valkhana-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+axum.workspace = true
+fs2.workspace = true
+sd-notify.workspace = true
+serde.workspace = true
+serde_json = "1"
+rusqlite.workspace = true
+sha2.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+valkhana-config = { path = "../valkhana-config" }
+valkhana-components = { path = "../valkhana-components" }
+valkhana-domain = { path = "../valkhana-domain" }
+valkhana-events = { path = "../valkhana-events" }
+valkhana-hermes = { path = "../valkhana-hermes" }
+valkhana-policy = { path = "../valkhana-policy" }
+valkhana-secrets = { path = "../valkhana-secrets" }
+
+[dev-dependencies]
+nix = { version = "0.30", features = ["signal"] }
+tempfile = "3"
+tower = { version = "0.5", features = ["util"] }

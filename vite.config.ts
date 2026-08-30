@@ -456,6 +456,8 @@ const config = defineConfig(({ mode, command }) => {
         // test twice (main tree + duplicate inside the worktree) whenever a
         // worktree happens to exist locally.
         '**/.worktrees/**',
+        // End-to-end suites are owned and executed by Playwright, not Vitest.
+        '**/e2e/**',
       ],
       // Force vitest to run React through its own transform pipeline so ESM
       // `import` and CJS `require('react')` share a single module instance.
