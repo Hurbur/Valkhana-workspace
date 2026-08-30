@@ -1248,6 +1248,7 @@ function NPC({
   const base = useMemo(() => new THREE.Vector3(...position), [position])
   const phase = useMemo(() => Math.random() * Math.PI * 2, [])
   const glbId = npcId || avatar
+  const [isNear, setIsNear] = useState(false)
   const hasGlb = useGlbAvailable(glbId, isNear || highlight)
 
   // Ambient speech bubble — cycles every ~12-22s with NPC lore lines.
@@ -1269,7 +1270,6 @@ function NPC({
   }, [npcId, avatar])
 
   const lastNear = useRef(false)
-  const [isNear, setIsNear] = useState(false)
   useFrame(({ clock }) => {
     if (!ref.current) return
     if (drift) {
@@ -2913,7 +2913,7 @@ function Scene({
 
       <Ground world={world} />
       <WorldDecor world={world} />
-      <ScatteredScenery worldId={worldId} />
+      <ScatteredScenery worldId={worldId === 'training' ? 'arena' : worldId} />
       {/* Ambient atmosphere particles — light-touch for performance */}
       {!photosensitiveMode && (
         <>

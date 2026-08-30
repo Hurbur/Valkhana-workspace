@@ -576,7 +576,7 @@ export function EnergyCore({ position, color = '#22d3ee' }: { position: [number,
 }
 
 
-type SceneryInstance = { type: string; pos: [number, number, number]; color?: string; scale?: number }
+type SceneryInstance = { type: string; pos: [number, number, number]; color?: string; scale?: number; glow?: string }
 function InstancedRocks({ items }: { items: SceneryInstance[] }) {
   const ref = useRef<THREE.InstancedMesh>(null)
   const matrices = useMemo(() => { const dummy = new THREE.Object3D(); return items.map((item, index) => { const scale = item.scale ?? 0.8; dummy.position.set(item.pos[0], item.pos[1] + 0.16 * scale, item.pos[2]); dummy.rotation.set(0.2, index * 0.73, -0.1); dummy.scale.set(scale, scale * (0.7 + (index % 3) * 0.08), scale); dummy.updateMatrix(); return dummy.matrix.clone() }) }, [items])
@@ -600,7 +600,7 @@ export function ScatteredScenery({
 }) {
   const items = useMemo(() => {
     const r = rng(seed * 100 + worldId.length)
-    const out: { type: string; pos: [number, number, number]; color?: string; scale?: number }[] = []
+    const out: SceneryInstance[] = []
 
     function maybeOnEdge(): [number, number, number] {
       // Place on ring 14-22 from center

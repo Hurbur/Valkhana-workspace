@@ -152,6 +152,11 @@ export async function updateKanbanCard(
     )
   }
   const column = updates.status === 'running' ? 'in_progress' : updates.status
+  if (column === 'ready') {
+    throw new KanbanAdapterError(
+      'Ready is dispatcher-owned and is not available as a manual board move',
+    )
+  }
   const mutation = taskMutationForColumn(column)
   if (!mutation) {
     throw new KanbanAdapterError(

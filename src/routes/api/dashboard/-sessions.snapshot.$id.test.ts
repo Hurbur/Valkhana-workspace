@@ -28,7 +28,7 @@ type Handlers = {
   }) => Promise<Response>
 }
 
-const handlers = (Route as { server: { handlers: Handlers } }).server.handlers
+const handlers = (Route as unknown as { server: { handlers: Handlers } }).server.handlers
 
 beforeEach(() => {
   vi.resetAllMocks()

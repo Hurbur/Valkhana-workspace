@@ -2,6 +2,12 @@
 
 This records implementation changes on `architecture/valkhana-v1.3.3`. It is separate from the product release changelog until the migration is ready to land.
 
+## 2026-08-30 — Local TypeScript release gate restored
+
+- Resolved the remaining root TypeScript application and test-contract errors after reconciling the TanStack dependency line. Both root and Cloudflare-worker `tsc --noEmit` commands now pass.
+- Verified 149 Vitest files/865 tests, production build, production/full dependency audits, Rust formatting/workspace tests/strict Clippy, and diff integrity locally.
+- This is a local-only quality milestone. AWS/deployment-dependent validation remains deferred because no running reviewed replacement target exists.
+
 ## 2026-08-30 — Deployment target unavailable
 
 - Recorded that the former Azure ValKhana/Hermes VM has been sunsetted and its proposed AWS successor is neither implemented nor running.

@@ -69,7 +69,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   mockGetCache.mockReturnValue(null)
   // Default: SSRF guard passes
-  mockResolvePinnedAddress.mockResolvedValue(undefined)
+  mockResolvePinnedAddress.mockResolvedValue(undefined as never)
 })
 
 describe('fetchGenericJson', () => {
@@ -242,7 +242,7 @@ describe('fetchGenericJson', () => {
     })
 
     it('proceeds normally when SSRF guard passes', async () => {
-      mockResolvePinnedAddress.mockResolvedValue(undefined)
+      mockResolvePinnedAddress.mockResolvedValue(undefined as never)
       mockFetch(200, [{ name: 'public-server', command: 'npx', args: ['-y', 'public-server'] }])
       const result = await fetchGenericJson('pub-source', 'https://pub.example.com/feed', 'community')
       expect(result.entries).toHaveLength(1)

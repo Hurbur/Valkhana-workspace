@@ -82,7 +82,7 @@ describe('kanban-backend', () => {
     [{ title: 'Unsafe', idempotencyKey: 'key', status: 'ready' }, 'Only unassigned'],
     [{ title: 'Unsafe' }, 'idempotencyKey is required'],
   ])('rejects unsupported admission %#', async (input, message) => {
-    await expect(createKanbanCard(input)).rejects.toEqual(expect.objectContaining({
+    await expect(createKanbanCard(input as never)).rejects.toEqual(expect.objectContaining({
       name: 'KanbanAdapterError',
       message: expect.stringContaining(message),
     }))

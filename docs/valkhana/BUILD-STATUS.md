@@ -7,7 +7,7 @@ Recovery branch: `snapshot/pre-valkhana-v1.3.3-20260816`
 
 This is the canonical continuation checklist for the v1.3.3 architecture migration. Update it whenever a build slice changes state.
 
-Quality gate: the completed migration scope scores **95/100** in [`QUALITY-SCORECARD.md`](QUALITY-SCORECARD.md), above the required 92.
+Quality gate: the completed migration scope scores **96/100** in [`QUALITY-SCORECARD.md`](QUALITY-SCORECARD.md), above the required 92.
 
 Last material update: 2026-08-30 UTC — see [`EVENT-TELEMETRY-PRIVACY.md`](EVENT-TELEMETRY-PRIVACY.md) for the event-journal boundary and current retention/redaction limits.
 
@@ -53,7 +53,7 @@ The Rust core, supervised health API, Tauri command bridge, dashboard status sur
 - [x] Verify Clippy passes with warnings denied.
 - [x] Verify the installed service is active and the canonical health endpoint responds.
 - [x] Run `systemd-analyze --user security`; current exposure score is `2.0 OK`.
-- [~] Reduce the root TypeScript failure cascade: aligned the TanStack Start/Router version line and separated Cloudflare-worker checking. The worker typecheck passes; 70 explicit root application/test contract errors remain, so the release typecheck gate is still open.
+- [x] Restore the TypeScript release gate: aligned the patched TanStack Start/Router line, corrected remaining local application/test contracts, and separated Cloudflare-worker checking. Both TypeScript projects typecheck cleanly; the full 149-file/865-test Vitest suite and production build pass.
 - [~] **Deferred by operator:** live Telegram/platform-health confirmation and any Hermes v0.20.2 promotion. Keep the verified rollback/canary evidence; do not touch the live deployment without a newly authorized maintenance window.
 - [ ] **Deployment environment unavailable:** the Azure VM used for prior ValKhana/Hermes evidence has been sunsetted. The intended AWS replacement is not implemented or running, so no live deployment, canary, promotion, recovery validation, or end-to-end Hermes verification may be claimed or attempted until a reviewed target exists.
 - [x] Add a Tauri 2 desktop target beside Electron.

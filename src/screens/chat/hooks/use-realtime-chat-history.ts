@@ -3,10 +3,10 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useChatStream } from '../../../hooks/use-chat-stream'
 import { useChatStore } from '../../../stores/chat-store'
 import { appendHistoryMessage, chatQueryKeys } from '../chat-queries'
+import type { ChatMessage } from '../types'
 import { toast } from '../../../components/ui/toast'
 import { textFromMessage } from '../utils'
 import { snapshotOptimisticUserMessages } from './optimistic-message-reinject'
-import type { ChatMessage } from '../types'
 import type { StreamingState } from '../../../stores/chat-store'
 
 const PORTABLE_HISTORY_STORAGE_KEY = 'claude_portable_chat_main'
@@ -423,7 +423,7 @@ export function useRealtimeChatHistory({
                     queryClient,
                     effectiveFriendlyId,
                     effectiveSessionKey,
-                    completedAssistant as unknown as import('@/types/chat').ChatMessage,
+                    completedAssistant as ChatMessage,
                   )
                 }
               }

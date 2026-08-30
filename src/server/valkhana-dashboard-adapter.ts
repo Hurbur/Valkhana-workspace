@@ -380,6 +380,13 @@ export async function fetchValkhanaActiveProfile(): Promise<ValkhanaActiveProfil
     )
   }
 
+  if (!matchingProfile) {
+    throw new ValkhanaAdapterError(
+      `dashboard did not provide the active profile ${active.id}`,
+      502,
+    )
+  }
+
   return {
     id: matchingProfile.id ?? matchingProfile.name ?? active.id,
     name: matchingProfile.name ?? matchingProfile.id ?? active.id,

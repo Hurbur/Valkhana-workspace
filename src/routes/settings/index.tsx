@@ -110,10 +110,10 @@ function PageThemeSwatch({
   )
 }
 
-const THEME_PREVIEWS: Record<
+const THEME_PREVIEWS: Partial<Record<
   ThemeId,
   { bg: string; panel: string; border: string; accent: string; text: string }
-> = {
+>> = {
   'claude-nous': {
     bg: '#031a1a',
     panel: '#082224',
@@ -226,7 +226,7 @@ function WorkspaceThemePicker() {
                 : 'border-[var(--theme-border)] bg-[var(--theme-card)] text-[var(--theme-text)] hover:-translate-y-0.5 hover:bg-[var(--theme-card2)]',
             )}
           >
-            <PageThemeSwatch colors={THEME_PREVIEWS[t.id]} />
+            <PageThemeSwatch colors={THEME_PREVIEWS[t.id] ?? THEME_PREVIEWS['claude-nous']!} />
             <div className="flex items-center gap-1.5">
               <span className="text-xs">{t.icon}</span>
               <span className="text-xs font-semibold">{t.label}</span>
@@ -356,9 +356,6 @@ function SettingsRoute() {
           )}
           {activeSection === 'agent' && (
             <ClaudeConfigSection activeView="agent" />
-          )}
-          {activeSection === 'routing' && (
-            <ClaudeConfigSection activeView="routing" />
           )}
           {activeSection === 'voice' && (
             <ClaudeConfigSection activeView="voice" />
@@ -2243,7 +2240,7 @@ function ClaudeConfigSection({
                       style={{ color: 'var(--theme-muted)' }}
                     >
                       {customApiKeyConfigured
-                        ? customProviderCatalogEntry.maskedKeys['CUSTOM_API_KEY'] || 'Set'
+                        ? customProviderCatalogEntry?.maskedKeys['CUSTOM_API_KEY'] || 'Set'
                         : 'Not set'}
                     </span>
                     <Button

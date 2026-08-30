@@ -21,7 +21,7 @@ type Handlers = {
   POST: (context: { request: Request }) => Promise<Response>
 }
 
-const handlers = (Route as { server: { handlers: Handlers } }).server.handlers
+const handlers = (Route as unknown as { server: { handlers: Handlers } }).server.handlers
 
 function postRequest(body: unknown): Request {
   return new Request('http://localhost/api/dashboard/sessions/snapshot', {
