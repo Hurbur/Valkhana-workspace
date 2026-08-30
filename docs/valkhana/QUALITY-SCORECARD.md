@@ -3,7 +3,7 @@
 Last assessed: 2026-08-30 UTC
 Scope: completed core daemon, Tauri/dashboard health, Hermes task adapters and protected policy-gated lifecycle requests, XDG configuration, bounded metadata-only event projection, encrypted SecretStore backend, Linux Tauri/Electron SSR-to-Core service authentication, and dashboard-key rotation/revocation
 Required gate: **92/100**
-Current score: **96/100 — PASS**
+Current score: **95/100 — PASS**
 
 This score does not claim that the complete v1.3.3 architecture is finished. Later phases receive their own assessment before being marked complete.
 
@@ -12,9 +12,9 @@ This score does not claim that the complete v1.3.3 architecture is finished. Lat
 | Architecture alignment | 25 | 25 | Preserves the existing UI and Electron path, adds Rust beside it, keeps Tauri thin, uses the documented XDG boundaries, keeps Hermes as task authority, and limits Rust state to ValKhana's separate global automation control. |
 | Security and isolation | 20 | 20 | Private runtime/socket modes, exclusive ownership lock, bounded response, timeout, systemd sandboxing/resource controls, narrow Tauri origin scope, per-launch authenticated sidecar handshake, durable nonce-digest replay protection, and an encrypted namespaced Secret Service backend with no plaintext downgrade. Service identity is explicitly not overstated as human presence. |
 | Reliability and lifecycle | 20 | 17 | Readiness notification, graceful cleanup, second-instance regression, supervised restart, atomic versioned state, read-after-write Hermes projection, and safe `STOPPED` initialization. Deducted 3 because interactive desktop recovery, assignment/promotion gates, and unsupported legacy task controls remain open. |
-| Test and build evidence | 20 | 20 | Root and Cloudflare-worker TypeScript projects typecheck cleanly; 149 Vitest files/865 tests, workspace Rust tests, strict Clippy, router/process/transport tests, frontend production build, real Tauri builds, pinned Rust 1.88 MSRV, and isolated historical Hermes contract evidence pass. |
-| Operability and continuity | 15 | 14 | Installed service verification, security score, canonical checklist/changelog, recovery branch, vault mirrors, and dedicated Linux Rust CI workflow. Deducted 1 because the installed local service lacks a configured compatible Hermes deployment, so migrated task routes currently fail closed rather than work end-to-end. |
-| **Total** | **100** | **96** | **Gate passed for this slice.** |
+| Test and build evidence | 20 | 20 | Root and Cloudflare-worker TypeScript projects typecheck cleanly; 149 Vitest files/865 tests, workspace Rust tests, strict Clippy, router/process/transport tests, frontend production build, real Tauri builds, pinned Rust 1.88 MSRV, and isolated historical Hermes contract evidence pass. The repaired clean-checkout sidecar pipeline also passes locally. |
+| Operability and continuity | 15 | 13 | Installed service verification, security score, canonical checklist/changelog, recovery branch, vault mirrors, and a repaired Linux Rust CI workflow. Deducted 2: the replacement GitHub Actions run has not yet confirmed the clean-checkout fix, and the installed local service lacks a configured compatible Hermes deployment, so migrated task routes currently fail closed rather than work end-to-end. |
+| **Total** | **100** | **95** | **Gate passed for this local slice; GitHub CI confirmation remains open.** |
 
 ## Evidence captured
 
@@ -55,7 +55,7 @@ This score does not claim that the complete v1.3.3 architecture is finished. Lat
 ## Required improvements before the next desktop milestone closes
 
 - Exercise core online, offline, and recovery behavior visibly in the actual desktop webview.
-- Observe the new Linux Rust workflow on the first pushed branch/PR run.
+- Observe the repaired Linux Rust workflow on the pushed branch/PR run; it must prepare the Tauri sidecar from a clean checkout before Cargo executes.
 
 ## Scoring rule
 

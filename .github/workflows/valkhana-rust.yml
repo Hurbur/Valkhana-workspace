@@ -19,6 +19,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Tauri validates externalBin during cargo build. The executable is
+      # intentionally ignored because it is generated from the checked-in web
+      # server source, so create it in every clean CI checkout.
+      - name: Prepare Tauri sidecar
+        run: pnpm tauri:prepare
+
       - name: Install Tauri Linux dependencies
         run: |
           sudo apt-get update

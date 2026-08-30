@@ -2,6 +2,12 @@
 
 This records implementation changes on `architecture/valkhana-v1.3.3`. It is separate from the product release changelog until the migration is ready to land.
 
+## 2026-08-30 — Reproducible clean-checkout Tauri CI preparation
+
+- Diagnosed the GitHub Rust workflow failure: Cargo correctly rejected Tauri's missing external sidecar in a clean checkout, while local workspaces had the intentionally ignored generated file.
+- Updated the workflow to install the locked pnpm graph and run the existing `pnpm tauri:prepare` pipeline before Cargo formatting, tests, and Clippy. This produces the sidecar from checked-in sources rather than committing a host-specific binary.
+- Locally verified `pnpm tauri:prepare`, authenticated sidecar smoke verification, Cargo formatting, locked workspace tests, and strict Clippy. The replacement GitHub Actions run remains the final CI confirmation.
+
 ## 2026-08-30 — Local TypeScript release gate restored
 
 - Resolved the remaining root TypeScript application and test-contract errors after reconciling the TanStack dependency line. Both root and Cloudflare-worker `tsc --noEmit` commands now pass.
