@@ -41,7 +41,7 @@ autonomous-operation sign-off.
 | Core healthy but not evidenced as enforcement path | Core health 200; policy DB contains 0 decisions and 0 approvals | STILL OPEN | Integrate and verify applicable PDP/PEP adapters |
 | Hermes task authority / Telegram health | No `hermes` executable, Hermes user service, or live Hermes state DB is present on this host | NOT APPLICABLE TO THIS HOST | Do not install it for this remediation; re-open only if Hermes is deliberately deployed here |
 | Production dependency advisories | Original audit: 1 critical, 13 high, 32 moderate, 10 low; current `pnpm audit --prod` and full `pnpm audit` are clean | RESOLVED | Targeted overrides and compatible direct upgrades applied; retain lockfile and re-audit before release |
-| TypeScript baseline | Direct `tsc --noEmit` still reports errors | STILL OPEN | Restore typecheck/test release gate |
+| TypeScript baseline | The patched compatible TanStack Start 1.168.49/Router 1.170.32 line was reconciled; direct root `tsc --noEmit` now reports 70 real application/test contract errors (down from 474), while the separate Cloudflare worker project typechecks cleanly | STILL OPEN | Resolve the remaining explicit application/test mismatches before restoring the root typecheck release gate |
 | Slot 4 acceptance | Agents-A1 is retained but not acceptance-complete | DEFERRED | Complete required acceptance evidence before autonomous selection |
 | Backup/restore and fleet observability | A non-destructive isolated backup/restore drill is documented and recorded; repeatable schedule/telemetry is not evidenced | RESOLVED (minimum drill) / DEFERRED (ongoing operations) | Establish scheduled restore drills, retention, and identity telemetry |
 | Unrestricted passwordless sudo | Explicit operator decision | ACCEPTED OPERATOR DECISION | No action |
@@ -74,7 +74,8 @@ autonomous-operation sign-off.
 | Retained fleet verifier | hashes, read-only artifacts, service aliases/paths | PASS (`scripts/verify-retained-fleet.py`) |
 | Shim auto-router gate | disabled until permanent prerequisites | PASS: health reports `auto_router: false`; `codex-auto` absent |
 | Basic service hardening | no privilege gain, private temp, restrictive umask, read-only system/home | PASS: active Ornith and shim show all five controls; exposure scores improved from 9.8 to 8.9 (broader hardening still required) |
-| TypeScript typecheck | clean | FAIL; existing compile errors remain |
+| Root TypeScript typecheck | clean | FAIL; 70 explicit application/test contract errors remain after removing the dependency/configuration cascade |
+| Cloudflare worker TypeScript typecheck | clean | PASS: `pnpm exec tsc -p playground-ws-worker/tsconfig.json --noEmit` |
 | Vitest/Playwright collection | Vitest excludes `e2e/**`; Playwright owns E2E suites | PASS: collection is separated; one pre-existing Hermes config test remains flaky in the full parallel run (passes in isolation) |
 | Dependency audit (production) | zero advisories | PASS: `pnpm audit --prod` |
 | Dependency audit (full tree) | zero advisories | PASS: `pnpm audit` |

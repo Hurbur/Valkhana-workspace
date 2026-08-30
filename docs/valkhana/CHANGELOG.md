@@ -2,6 +2,16 @@
 
 This records implementation changes on `architecture/valkhana-v1.3.3`. It is separate from the product release changelog until the migration is ready to land.
 
+## 2026-08-30 — Live Hermes promotion deferred
+
+- The operator deferred further live Telegram/platform-health work and any Hermes v0.20.2 promotion. The qualified canary and rollback evidence are retained, but no production deployment action may resume without a newly authorized maintenance window.
+
+## 2026-08-30 — TypeScript baseline remediation checkpoint
+
+- Reconciled the incompatible TanStack dependency line by aligning the patched Start 1.168.49, Router 1.170.32, plugin 1.168.35, and companion packages, eliminating the generated route-contract cascade without reintroducing advisories.
+- Added missing Cloudflare worker and Three.js declaration dependencies and excluded the worker from the browser/server project so it is checked under its own Cloudflare configuration. The dedicated worker typecheck passes.
+- Root `tsc --noEmit` failures fell from 474 to 70. The remainder are explicit application/test contract defects and remain a release blocker; no typecheck suppression was added.
+
 ## 2026-08-30 — Durable dashboard-request replay protection
 
 - Replaced process-lifetime authenticated-request nonce tracking with a private SQLite nonce-digest ledger in Core's systemd-managed state directory.

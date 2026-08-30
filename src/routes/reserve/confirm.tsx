@@ -9,7 +9,7 @@ export const Route = createFileRoute('/reserve/confirm')({
 
 function ReserveConfirmRoute() {
   usePageTitle('Confirm HermesWorld reservation')
-  const token = Route.useSearch({ strict: false }).token || ''
+  const token = new URLSearchParams(window.location.search).get('token') || ''
   const [state, setState] = useState<{
     status: 'loading' | 'success' | 'error'
     message: string

@@ -53,6 +53,8 @@ The Rust core, supervised health API, Tauri command bridge, dashboard status sur
 - [x] Verify Clippy passes with warnings denied.
 - [x] Verify the installed service is active and the canonical health endpoint responds.
 - [x] Run `systemd-analyze --user security`; current exposure score is `2.0 OK`.
+- [~] Reduce the root TypeScript failure cascade: aligned the TanStack Start/Router version line and separated Cloudflare-worker checking. The worker typecheck passes; 70 explicit root application/test contract errors remain, so the release typecheck gate is still open.
+- [~] **Deferred by operator:** live Telegram/platform-health confirmation and any Hermes v0.20.2 promotion. Keep the verified rollback/canary evidence; do not touch the live deployment without a newly authorized maintenance window.
 - [x] Add a Tauri 2 desktop target beside Electron.
 - [x] Add a bounded, typed Unix-socket client in `valkhana-api`.
 - [x] Expose `valkhana_core_health` through the Tauri command bridge.

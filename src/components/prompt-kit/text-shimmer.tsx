@@ -1,9 +1,10 @@
 'use client'
 
+import React from 'react'
 import { cn } from '@/lib/utils'
 
 export type TextShimmerProps = {
-  as?: string
+  as?: React.ElementType
   duration?: number
   spread?: number
   children: React.ReactNode
@@ -18,22 +19,22 @@ export function TextShimmer({
   ...props
 }: TextShimmerProps) {
   const dynamicSpread = Math.min(Math.max(spread, 5), 45)
-  const Component = as as React.ElementType
+  const Component = as
 
-  return (
-    <Component
-      className={cn(
+  return React.createElement(
+    Component,
+    {
+      ...props,
+      className: cn(
         'bg-size-[200%_auto] bg-clip-text font-medium text-transparent',
         'animate-[shimmer_4s_infinite_linear]',
         className,
-      )}
-      style={{
+      ),
+      style: {
         backgroundImage: `linear-gradient(to right, var(--color-primary-600) ${50 - dynamicSpread}%, var(--color-primary-950) 50%, var(--color-primary-600) ${50 + dynamicSpread}%)`,
         animationDuration: `${duration}s`,
-      }}
-      {...props}
-    >
-      {children}
-    </Component>
+      },
+    },
+    children,
   )
 }
