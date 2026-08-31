@@ -7,7 +7,7 @@ Recovery branch: `snapshot/pre-valkhana-v1.3.3-20260816`
 
 This is the canonical continuation checklist for the v1.3.3 architecture migration. Update it whenever a build slice changes state.
 
-Quality gate: the completed local migration scope scores **95/100** in [`QUALITY-SCORECARD.md`](QUALITY-SCORECARD.md), above the required 92; GitHub clean-checkout CI confirmation remains open.
+Quality gate: the completed migration scope scores **96/100** in [`QUALITY-SCORECARD.md`](QUALITY-SCORECARD.md), above the required 92, including a verified GitHub clean-checkout CI run.
 
 Last material update: 2026-08-30 UTC — see [`EVENT-TELEMETRY-PRIVACY.md`](EVENT-TELEMETRY-PRIVACY.md) for the event-journal boundary and current retention/redaction limits.
 
@@ -66,7 +66,7 @@ The Rust core, supervised health API, Tauri command bridge, dashboard status sur
 - [x] Verify a real Tauri debug build (`--no-bundle`) succeeds.
 - [x] Pin the workspace to its proven Rust 1.88.0 MSRV.
 - [x] Verify tests and strict Clippy under the pinned MSRV.
-- [~] Repair dedicated Linux Rust CI so a clean checkout installs locked Node dependencies and reproducibly prepares the ignored Tauri sidecar before Cargo. Local workflow-equivalent verification passes; the replacement GitHub Actions run remains to be observed.
+- [x] Repair dedicated Linux Rust CI so a clean checkout installs locked Node dependencies and reproducibly prepares the ignored Tauri sidecar before Cargo. GitHub run `33343179153` passed formatting, locked workspace tests, and strict Clippy.
 - [x] Package TanStack Start SSR and client assets into a target-triple Tauri sidecar.
 - [x] Manage the sidecar lifecycle from trusted Rust code without webview shell permissions.
 - [x] Authenticate sidecar readiness and web sessions with a random per-launch token.
@@ -150,7 +150,7 @@ The Rust core, supervised health API, Tauri command bridge, dashboard status sur
   - Three Playwright specifications under `e2e/` are incorrectly collected by Vitest.
 - The repository-wide `tsc --noEmit` baseline is also not green and reports pre-existing Cloudflare worker globals, router typing, playground/Three.js typing, and legacy swarm typing errors. The new core client focused tests and production build pass.
 - The production frontend build succeeds but reports large chunk warnings.
-- A historical GitHub clean-checkout Rust run failed before tests because Tauri's ignored generated sidecar was absent. The workflow now runs locked dependency installation and `pnpm tauri:prepare` before Cargo; the local equivalent, including sidecar smoke verification, passes. The next GitHub Actions result is still required evidence.
+- A historical GitHub clean-checkout Rust run failed before tests because Tauri's ignored generated sidecar was absent. The workflow now runs locked dependency installation and `pnpm tauri:prepare` before Cargo; GitHub run `33343179153` confirms formatting, locked workspace tests, and strict Clippy pass from a clean checkout.
 - `valkhana-events` and `valkhana-state` now include a bounded metadata-only Core event projection. It deliberately clears on Core restart; the private policy SQLite ledger remains durable. Configurable/per-project retention, journald/SSE/export sinks, aggregation, and global control/transition enforcement remain later slices.
 - The server bundler emits existing `import.meta` and tree-shaking warnings; runtime SSR and embedded asset smoke tests pass despite them.
 - Historical Azure evidence: the former Azure Hermes gateway did not expose the previously assumed unauthenticated HTTP health endpoint on port 8642. The read-only adapter therefore uses the exact deployed CLI by default and retains loopback HTTP only as an explicitly bounded fallback. That VM is now sunsetted; this is not a current deployment capability.
